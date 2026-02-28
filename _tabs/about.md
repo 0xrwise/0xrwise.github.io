@@ -5,54 +5,61 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-## About Me
+## About
 
-I build, analyze, and document ideas in public.
+I use this space to build in public.
 
-This site functions as both a knowledge archive and a professional portfolio — a place where research, projects, and structured thinking are published transparently.
+Not just to share outcomes — but to document the process behind them.
+
+This site is both a portfolio and a working archive.  
+A place where ideas are explored, projects are shaped, and thinking is made visible.
 
 ---
 
-## What I Do
+## What This Site Represents
+
+- Work in progress, not just finished results  
+- Research turned into structure  
+- Projects shaped through iteration  
+- Ideas refined through writing  
+
+It’s less about showcasing — more about demonstrating direction.
+
+---
+
+## Focus
+
+My work revolves around:
 
 - Technical exploration  
-- Research documentation  
-- System and strategic analysis  
-- Building digital projects  
-- Long-term thinking and experimentation  
+- Research-driven thinking  
+- Strategic experimentation  
+- Building long-term digital assets  
+
+Everything here reflects real curiosity and deliberate growth.
 
 ---
 
-## This Site Is
+## Approach
 
-- A portfolio of selected work  
-- A public lab for ideas  
-- A documentation system  
-- A structured thinking space  
+I prefer:
 
-Everything here reflects real work, real experimentation, and continuous iteration.
+Depth over speed  
+Clarity over noise  
+Structure over trend  
 
----
-
-## Working Philosophy
-
-- Signal over noise  
-- Depth over surface  
-- Structure over chaos  
-- Clarity over decoration  
+Because meaningful work compounds.
 
 ---
 
-## Current Direction
+## Direction
 
-Focused on building leverage through:
+This is part lab, part portfolio.
 
-- Technical skill development  
-- Research-based writing  
-- Strategic digital projects  
-
-This is a long-term build.
+A place for building, testing, refining —  
+and slowly turning scattered ideas into systems.
 
 ---
 
-If you're interested in collaboration, research discussions, or project work — feel free to reach out.
+If something here resonates,  
+there’s always room for collaboration.
