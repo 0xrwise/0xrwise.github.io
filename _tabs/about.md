@@ -5,8 +5,6 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-## About
-
 I use this space to build in public.
 
 Not just to share outcomes — but to document the process behind them.
