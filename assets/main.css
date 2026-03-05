@@ -113,7 +113,7 @@ table th, table td { padding: 8px 12px; border-bottom: 1px solid var(--border); 
 table th { font-weight: 500; color: var(--text-mute); letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.75rem; }
 
 /* ── LAYOUT ──────────────────────────────────────────────────── */
-.site-wrap { max-width: 740px; margin: 0 auto; padding: 0 20px; width: 100%; }
+.site-wrap { max-width: 860px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); width: 100%; }
 .container { flex: 1 0 auto; }
 footer { flex-shrink: 0; }
 
@@ -555,9 +555,114 @@ html.dark img:not([src*=".svg"]) { opacity: 0.92; }
 details[open] summary ~ * { animation: sweep 0.3s ease-in-out; }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
-@media screen and (max-width: 700px) { .site-wrap { padding: 0 16px; } }
-@media screen and (max-width: 520px) {
-  .post-wrapper { grid-template-columns: 64px 1fr; gap: 10px; }
-  .nav-item { font-size: 12px; }
+
+/* ── Large desktop (1200px+) ─────────────────────────────────── */
+@media screen and (min-width: 1200px) {
+  .site-wrap { max-width: 960px; }
+  body { font-size: 17px; }
+  .post-wrapper { grid-template-columns: 90px 1fr; gap: 24px; padding: 11px 20px; }
+  .post-link { font-size: 16px; }
+  header h1 { font-size: 32px; }
+  .post-header-title { font-size: 28px; }
 }
-@media screen and (max-width: 370px) { .nav-item { font-size: 11px; } }
+
+/* ── Medium desktop (900px–1199px) ───────────────────────────── */
+@media screen and (min-width: 900px) and (max-width: 1199px) {
+  .site-wrap { max-width: 860px; }
+  .post-wrapper { grid-template-columns: 85px 1fr; gap: 20px; }
+}
+
+/* ── Small desktop / large tablet (768px–899px) ──────────────── */
+@media screen and (min-width: 768px) and (max-width: 899px) {
+  .site-wrap { max-width: 100%; padding: 0 32px; }
+  .post-wrapper { grid-template-columns: 80px 1fr; gap: 16px; }
+}
+
+/* ── Tablet (600px–767px) ────────────────────────────────────── */
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .site-wrap { padding: 0 24px; }
+  body { font-size: 15px; }
+  .post-wrapper { grid-template-columns: 74px 1fr; gap: 14px; padding: 9px 14px; }
+  header { padding: 28px 0 20px; }
+  .post-header { padding: 28px 0 18px; margin-bottom: 28px; }
+}
+
+/* ── Mobile (max 599px) ──────────────────────────────────────── */
+@media screen and (max-width: 599px) {
+  .site-wrap { padding: 0 16px; }
+  body { font-size: 15px; }
+
+  /* Nav */
+  .site-nav { padding: 11px 0; }
+  .site-nav .site-wrap { gap: 4px; }
+  .nav-item { font-size: 13px; }
+  .dark-light-switch { font-size: 10px; padding: 2px 8px; }
+
+  /* Header */
+  header { padding: 24px 0 16px; }
+  header h1 { font-size: 22px; }
+  .site-subtitle { font-size: 11px; }
+
+  /* Post list */
+  .post-wrapper { grid-template-columns: 60px 1fr; gap: 10px; padding: 8px 12px; }
+  .post-date { font-size: 11px; }
+  .post-link { font-size: 14px; }
+
+  /* Post header */
+  .post-header { padding: 24px 0 16px; margin-bottom: 24px; }
+  .post-header-title { font-size: 20px; margin-bottom: 10px; }
+  .post-meta { gap: 8px; }
+
+  /* Content text */
+  p, li { font-size: 1rem; }
+  blockquote { font-size: 1rem; padding-left: 12px; }
+
+  /* Code */
+  code, pre { font-size: 0.8rem; }
+  .highlight > pre { padding: 10px 12px; }
+
+  /* Tags */
+  .tag-box { gap: 6px; }
+  .tag-box li a { font-size: 11px; padding: 3px 8px; }
+
+  /* Footer */
+  .site-footer { padding: 16px 0; }
+  .footer-meta { font-size: 10px; }
+
+  /* Featured */
+  .featured-posts { padding: 0.25rem 0 0.75rem; }
+
+  /* Pagination */
+  .pagination { padding: 16px 0 32px; gap: 10px; }
+  .pagination a { font-size: 11px; max-width: 46%; }
+}
+
+/* ── Small mobile (max 380px) ────────────────────────────────── */
+@media screen and (max-width: 380px) {
+  .site-wrap { padding: 0 12px; }
+  .nav-item { font-size: 11px; }
+  .dark-light-switch { font-size: 9px; padding: 2px 6px; }
+  header h1 { font-size: 19px; }
+  .post-wrapper { grid-template-columns: 52px 1fr; gap: 8px; padding: 7px 10px; }
+  .post-date { font-size: 10px; }
+  .post-link { font-size: 13px; }
+  h3.home-page-heading { font-size: 11px; }
+}
+
+/* ── Touch devices — bigger tap targets ──────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  .post-wrapper { padding-top: 11px; padding-bottom: 11px; }
+  .dark-light-switch { padding: 5px 12px; }
+  .site-nav a.nav-item { padding: 4px 2px; }
+  .tag-box li a { padding: 5px 10px; }
+  a.post-tag { padding: 4px 10px; }
+}
+
+/* ── Print ───────────────────────────────────────────────────── */
+@media print {
+  .site-nav, .site-footer, #_progress, .dark-light-switch, .pagination { display: none; }
+  body { background: white; color: black; font-size: 12pt; }
+  a { color: black; border-bottom: none; }
+  .post-header { border-bottom: 1px solid #ccc; }
+  .highlight { border: 1px solid #ccc; }
+}
