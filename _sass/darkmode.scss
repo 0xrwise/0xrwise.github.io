@@ -1,0 +1,35 @@
+// ── DARK MODE ─────────────────────────────────────────────────
+// All color switching is handled via CSS variables in constants.scss.
+// body.dark overrides the tokens there — no need to repeat element rules.
+//
+// Only non-token overrides live here (things that need special treatment
+// in dark mode beyond a simple color swap).
+
+body.dark {
+  // Syntax highlight label badge in dark mode
+  .highlight > pre > code::before {
+    background-color: #111111;
+    border-color: #3a3a3a;
+    color: #8fbc8f;
+  }
+
+  // Inline code
+  code:not(.highlight code) {
+    background: var(--code-bg);
+    color: var(--text);
+  }
+
+  // Input fields
+  input, textarea, select {
+    background: var(--bg-hover);
+    color: var(--text);
+    border-color: var(--border);
+
+    &::placeholder { color: var(--text-mute); }
+  }
+
+  // Images — slightly dim to reduce harshness
+  img:not([src*=".svg"]) {
+    opacity: 0.92;
+  }
+}

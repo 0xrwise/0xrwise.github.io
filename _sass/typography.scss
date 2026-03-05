@@ -1,0 +1,114 @@
+// ── TYPOGRAPHY ────────────────────────────────────────────────
+// Fonts are loaded via Google Fonts in _includes/head.html:
+// Geist Mono (UI, headings, code labels) + Source Serif 4 (body, post titles)
+
+:root {
+  --font-mono:  'Geist Mono', 'Courier New', monospace;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+}
+
+// Base
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+// Headings
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-mono);
+  color: var(--text);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(18px, 4vw, 26px); font-weight: 600; margin: 0.75rem 0; }
+h2 { font-size: 1.35rem;  font-weight: 500; margin: 0.75rem 0; }
+h3 { font-size: 1.15rem;  font-weight: 500; margin: 0.75rem 0; }
+h4 { font-size: 1rem;     font-weight: 500; margin: 0.75rem 0; }
+h5, h6 { font-size: 0.9rem; font-weight: 400; margin: 0.75rem 0; }
+
+// Body text
+p {
+  font-size: 1.05rem;
+  line-height: 1.75em;
+  color: var(--text);
+  margin: 1.25rem 0;
+}
+
+li {
+  font-size: 1.05rem;
+  line-height: 1.7em;
+  color: var(--text);
+}
+
+figcaption {
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.6em;
+  color: var(--text-mute);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+// Links
+a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid var(--link-ul);
+  padding-bottom: 1px;
+  transition: border-color 0.2s, color 0.2s;
+
+  &:hover {
+    border-bottom-color: var(--text);
+    background: none;
+  }
+}
+
+// Blockquote
+blockquote {
+  margin: 1.5rem 0;
+  padding: 0 0 0 16px;
+  border-left: 2px solid var(--border);
+  color: var(--text-mute);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.7em;
+}
+
+// Lists
+ul, ol { padding-left: 20px; }
+
+// Tables
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+
+  th, td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  th {
+    font-weight: 500;
+    color: var(--text-mute);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+}
+
+// Figure
+figure {
+  width: 100%;
+  margin: 1.5rem 0;
+}

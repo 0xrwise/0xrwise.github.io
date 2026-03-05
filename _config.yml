@@ -1,0 +1,56 @@
+title: "My Blog"
+name:  "My Blog"
+description: "A simple, clean Jekyll blog"
+url: "https://yourdomain.com"
+author:
+  name: "Your Name"
+
+# Enables dark/light toggle button in nav
+javascript_enabled: true
+
+# Featured posts section title (shown at bottom of each post)
+featured_posts_title: "Featured"
+
+# Featured posts — add URLs of posts you want to feature
+featured_posts:
+  - url: /essays/sample-post
+    title: Sample Post
+
+# Collections
+collections:
+  news:
+    output: true
+    title: News
+    default_open: false
+  essays:
+    output: true
+    title: Essays
+    default_open: true
+
+# Default front matter
+defaults:
+  - scope:
+      path: ""
+      type: "news"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+      type: "essays"
+    values:
+      layout: "post"
+
+sass:
+  style: compressed
+  quiet_deps: true
+  
+plugins:
+  - jekyll-feed
+
+permalink: /:collection/:title
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - node_modules

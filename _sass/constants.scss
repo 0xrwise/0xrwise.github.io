@@ -1,0 +1,37 @@
+// ── DESIGN TOKENS ─────────────────────────────────────────────
+// Light mode (default)
+:root {
+  --bg:         #ffffff;
+  --bg-hover:   #f4f4f4;
+  --text:       #111111;
+  --text-mute:  #666666;
+  --border:     #d0d0d0;
+  --link:       #111111;
+  --link-ul:    #aaaaaa;
+  --tag-bg:     #eeeeee;
+  --tag-text:   #333333;
+  --code-bg:    #f0f0f0;
+  --progress:   #111111;
+
+  // Legacy aliases (kept for any partial that still references them)
+  --color__gray--light: #e8e8e8;
+  --color__gray--dark:  #0f0f0f;
+}
+
+// Dark mode
+body.dark {
+  --bg:         #0f0f0f;
+  --bg-hover:   #1a1a1a;
+  --text:       #e8e8e8;
+  --text-mute:  #888888;
+  --border:     #2e2e2e;
+  --link:       #e8e8e8;
+  --link-ul:    #555555;
+  --tag-bg:     #222222;
+  --tag-text:   #bbbbbb;
+  --code-bg:    #1a1a1a;
+  --progress:   #e8e8e8;
+
+  --color__gray--light: #e8e8e8;
+  --color__gray--dark:  #0f0f0f;
+}

@@ -1,0 +1,13 @@
+<aside class="featured-posts">
+  <div class="featured-header">
+    <span class="featured-label">{{ site.featured_posts_title }}</span>
+  </div>
+  <div class="parent">
+    {% for post in site.featured_posts %}
+      <div class="post-wrapper">
+        <span class="post-date featured-pin">★</span>
+        <a class="post-link" href="{{ post.url }}">{{ post.title }}</a>
+      </div>
+    {% endfor %}
+  </div>
+</aside>

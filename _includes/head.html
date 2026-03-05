@@ -1,0 +1,49 @@
+{% if page.layout == 'post' %}
+  {% assign description = page.excerpt %}
+{% else %}
+  {% assign description = site.description %}
+{% endif %}
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="description" content="{{ description | newline_to_br | strip_newlines | replace: '<br />', ' ' | strip_html | strip | truncate: 160 }}" />
+  <link rel="canonical" href="{{ site.url }}{{ page.url }}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/assets/main.css"/>
+  <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="/feed.xml" />
+  <title>{% if page.title == "Home" %}{{ site.title }}{% else %}{{ page.title }} &middot; {{ site.title }}{% endif %}</title>
+
+  <!-- JS di head supaya dark mode aktif sebelum halaman render -->
+  {% if site.javascript_enabled %}
+    <script src="/assets/main.js"></script>
+  {% endif %}
+
+  {% if page.layout == 'post' %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "author": "{{ site.author.name }}",
+      "datePublished": "{{ page.date | date_to_xmlschema }}",
+      "headline": "{{ page.title }}",
+      "url": "{{ site.url }}{{ page.url }}",
+      "inLanguage": "en-US",
+      "isFamilyFriendly": "true",
+      "keywords": "{{ page.tags | join: ', ' }}",
+      "image": "{{ site.url }}/favicon.ico",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ site.url }}{{ page.url }}"
+      }
+    }
+  </script>
+  {% endif %}
+</head>

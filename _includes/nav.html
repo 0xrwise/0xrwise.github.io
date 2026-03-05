@@ -1,0 +1,14 @@
+<nav class="site-nav">
+  <div class="site-wrap">
+    <a class="nav-item" href="/">Home</a>
+    <span class="nav-sep">|</span>
+    <a class="nav-item" href="/tags">Tags</a>
+    <span class="nav-sep">|</span>
+    <a class="nav-item" href="/about">About</a>
+    <span class="nav-sep">|</span>
+    <a class="nav-item" href="/feed.xml">RSS</a>
+    {% if site.javascript_enabled %}
+      <button class="dark-light-switch" aria-label="Toggle dark mode">Dark</button>
+    {% endif %}
+  </div>
+</nav>

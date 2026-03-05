@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include head.html %}
+<body>
+  <div id="_progress"></div>
+
+  {% include nav.html %}
+
+  <div class="site-wrap">
+    {{ content }}
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-wrap">
+      <div class="footer-nav">
+        <a href="/">Home</a>
+        <span class="nav-sep">|</span>
+        <a href="/tags">Tags</a>
+        <span class="nav-sep">|</span>
+        <a href="/about">About</a>
+        <span class="nav-sep">|</span>
+        <a href="/feed.xml">RSS</a>
+      </div>
+      <p class="footer-meta">
+        Theme: <a href="https://github.com/0xrfi/0xdir">0xdir</a>
+        &nbsp;·&nbsp;
+        <a href="/">{{ site.name }}</a> &copy; {{ site.time | date: '%Y' }}
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
