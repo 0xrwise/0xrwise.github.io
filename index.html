@@ -906,26 +906,31 @@ function _renderViewer(path, content) {
    (IP geo-profiling + rich terminal display + Telegram via honeypot.js)
 ════════════════════════════════════════════════════════════════ */
 
-/* ── IP & Geo Profiler ── */
+/* ── IP & Geo Profiler (VPN & AdBlock Friendly) ── */
 async function collectIPProfile() {
   try {
-    const r = await fetch('[https://ipapi.co/json/](https://ipapi.co/json/)', { cache: 'no-store' });
-    if (!r.ok) throw new Error();
+    const r = await fetch('[https://ipwho.is/](https://ipwho.is/)', { cache: 'no-store' });
     const d = await r.json();
+    if (!d.success) throw new Error();
     return {
-      ip: d.ip||'UNKNOWN', city: d.city||'???', region: d.region||'???',
-      country: d.country_name||'???', country_code: d.country_code||'--',
-      isp: d.org||'UNKNOWN ISP', asn: d.asn||'???', timezone: d.timezone||'???',
-      lat: d.latitude||0, lon: d.longitude||0, postal: d.postal||'???',
+      ip: d.ip || 'UNKNOWN', city: d.city || '???', region: d.region || '???',
+      country: d.country || '???', country_code: d.country_code || '--',
+      isp: d.connection.isp || 'UNKNOWN ISP', asn: d.connection.asn || '???', timezone: d.timezone.id || '???',
+      lat: d.latitude || 0, lon: d.longitude || 0, postal: d.postal || '???'
     };
   } catch {
     try {
-      const r2 = await fetch('[https://ipinfo.io/json](https://ipinfo.io/json)', { cache: 'no-store' });
+      const r2 = await fetch('[http://ip-api.com/json/](http://ip-api.com/json/)', { cache: 'no-store' });
       const d2 = await r2.json();
-      const [lat, lon] = (d2.loc || '0,0').split(',');
-      return { ip:d2.ip||'UNKNOWN', city:d2.city||'???', region:d2.region||'???', country:d2.country||'???', country_code:d2.country||'--', isp:d2.org||'UNKNOWN ISP', asn:'???', timezone:d2.timezone||'???', lat:parseFloat(lat), lon:parseFloat(lon), postal:d2.postal||'???' };
+      if (d2.status !== 'success') throw new Error();
+      return {
+        ip: d2.query || 'UNKNOWN', city: d2.city || '???', region: d2.regionName || '???',
+        country: d2.country || '???', country_code: d2.countryCode || '--',
+        isp: d2.isp || 'UNKNOWN ISP', asn: d2.as || '???', timezone: d2.timezone || '???',
+        lat: d2.lat || 0, lon: d2.lon || 0, postal: d2.zip || '???'
+      };
     } catch {
-      return { ip:'FETCH_FAILED', city:'?', region:'?', country:'?', country_code:'?', isp:'?', asn:'?', timezone:'?', lat:0, lon:0, postal:'?' };
+      return { ip:'NETWORK_BLOCKED', city:'HIDDEN', region:'HIDDEN', country:'HIDDEN', country_code:'--', isp:'VPN / ADBLOCK', asn:'???', timezone:'???', lat:0, lon:0, postal:'???' };
     }
   }
 }
@@ -1017,8 +1022,10 @@ function runLoginHoneypotTerminal(ipData, devData, meta) {
     : 'CONNECTION_DATA_UNAVAILABLE';
   const tzStr   = `${devData.tz} (UTC${devData.tzOffset >= 0 ? '+' : ''}${devData.tzOffset / 60})`;
   
-  // FIX: Perbaiki URL Maps ke standar [https://maps.google.com](https://maps.google.com)
-  const mapLink = `https://maps.google.com/?q=${ipData.lat},${ipData.lon}`;
+  // FIX: URL Maps standar yang valid. Beri label BLOCKED jika data gagal diambil.
+  const mapLink = (ipData.lat !== 0 && ipData.lon !== 0) 
+    ? `http://googleusercontent.com/maps.google.com/${ipData.lat},${ipData.lon}` 
+    : 'LOCATION_RESTRICTED_BY_NETWORK';
 
   const SCRIPT = [
     { text: '╔══════════════════════════════════════════════════╗', cls: 'red',    delay: 0   },
