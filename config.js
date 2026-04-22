@@ -3,43 +3,52 @@
 //  COPY file ini → rename jadi config.js
 //  config.js ada di .gitignore, JANGAN di-commit!
 //
-//  BUG FIX #3: JANGAN taruh token asli di sini!
-//  File ini AMAN untuk di-push ke GitHub (hanya contoh/placeholder).
-//  Token asli hanya ada di config.js (gitignored).
+//  SECURITY FIX: Telegram credentials TIDAK LAGI disimpan di sini.
+//  Masukkan Bot Token & Chat ID melalui tab "Settings" di Admin Panel.
+//  Credentials akan disimpan di localStorage browser (lokal, tidak pernah
+//  ke server/GitHub) dengan key: 'hp_tg_token' dan 'hp_tg_chat'.
 // ════════════════════════════════════════════════════════════════
 
 const CONFIG = {
 
   // ── GITHUB (untuk baca file dari repo) ──────────────────────
-  GITHUB_USER : '0xrwise',     // contoh: '0xrwise'
-  GITHUB_REPO : '0xrwise.github.io',    // contoh: '0xrwise.github.io'
+  GITHUB_USER : '0xrwise',
+  GITHUB_REPO : '0xrwise.github.io',
   // ⚠️ JANGAN isi GITHUB_TOKEN di sini!
   // Token dimasukkan langsung via form login (kolom "Auth Token / PAT")
   // saat login ke admin panel. Token disimpan di sessionStorage (sementara)
   // atau localStorage jika "Remember Token" dicentang.
-  // Ini jauh lebih aman daripada hardcode di source code.
 
   // ── ADMIN LOGIN ──────────────────────────────────────────────
   // PANEL_PASSWORD_HASH: SHA256 dari password kamu
   //   → cara generate: buka console browser, ketik:
   //     CryptoJS.SHA256('password_kamu').toString()
-  PANEL_USERNAME     : '0xrwise',   // contoh: '0xrwise'
+  PANEL_USERNAME     : '0xrwise',
   PANEL_PASSWORD_HASH: 'ac6b482c7d0ab5f4e2b1809cf57555f7d7ffd0f9232afbdaf517a2a0b2aa15e3',
 
   // ── TELEGRAM HONEYPOT ALERT ──────────────────────────────────
-  // Buat bot: chat @BotFather di Telegram → /newbot
-  // Dapatkan chat_id: chat @userinfobot atau @getmyid_bot
+  // ⚠️  BOT_TOKEN dan CHAT_ID TIDAK BOLEH diisi di sini!
+  //
+  //  Mengapa? File config.js bisa terbaca siapapun via browser (View Source).
+  //  Bot Token yang bocor memungkinkan penyerang:
+  //    1. Mengirim pesan massal dari bot kamu
+  //    2. Membaca semua pesan yang diterima bot
+  //    3. Menonaktifkan sistem alert honeypot kamu
+  //
+  //  ✅ Cara aman: Login admin panel → tab "Settings" →
+  //     isi Bot Token & Chat ID → klik Save.
+  //     Credentials tersimpan di localStorage HANYA di browser kamu.
   TELEGRAM: {
-    ENABLED  : false,         // Ganti ke true ATAU biarkan false (auto-detect jika token terisi)
-    BOT_TOKEN: '8642208265:AAFqnR1kEGDiN3jNCFuAFOl_yIsJawAnnEg',            // Isi token bot kamu: '7123456789:AAHxxxxxxxx'
-    CHAT_ID  : '7019766006',            // Isi chat_id kamu: '123456789'
+    ENABLED  : false,
+    BOT_TOKEN: '',   // ← Biarkan kosong. Isi via Admin Panel > Settings.
+    CHAT_ID  : '',   // ← Biarkan kosong. Isi via Admin Panel > Settings.
   },
 
-  // ── HONEYPOT SETTINGS ─────────────────────────────────────────
+  // ── HONEYPOT SETTINGS ────────────────────────────────────────
   HONEYPOT: {
     LOGIN_TRAP    : true,
-    MAX_ATTEMPTS  : 5,       // maks percobaan login sebelum lockout
-    LOCKOUT_MIN   : 30,      // durasi lockout dalam menit
+    MAX_ATTEMPTS  : 5,
+    LOCKOUT_MIN   : 30,
     URL_TRAP      : true,
     CONSOLE_TRAP  : true,
     SHOW_TERMINAL : true,
