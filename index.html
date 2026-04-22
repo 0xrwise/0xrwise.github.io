@@ -736,7 +736,10 @@ async function viewFile(path, url, isEncrypted) {
   } else {
     toast('Fetching datastream...', '');
     try {
-      const res = await fetch(url + '?t=' + Date.now());
+      // FIX: Cek apakah URL sudah punya query parameter
+      const sep = url.includes('?') ? '&' : '?';
+      const res = await fetch(url + sep + 't=' + Date.now()); 
+      
       if (!res.ok) throw new Error();
       const text = await res.text();
       const looksMarkdown = path.endsWith('.md') || path.endsWith('.md.enc') ||
@@ -1261,7 +1264,10 @@ async function adminEditFile(path, downloadUrl, sha) {
   if (!downloadUrl) { toast('URL tidak tersedia', 'error'); return; }
   toast('Mengambil file...', '');
   try {
-    const res = await fetch(downloadUrl + '?t=' + Date.now());
+    // FIX: Cek apakah URL sudah punya query parameter
+    const sep = downloadUrl.includes('?') ? '&' : '?';
+    const res = await fetch(downloadUrl + sep + 't=' + Date.now());
+
     if (!res.ok) throw new Error('Fetch gagal');
     const fileContent = await res.text();
     _editMeta = { path, sha };
