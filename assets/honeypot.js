@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════
-//  0XRWISE HONEYPOT MODULE v2.1
+//  0XRWISE HONEYPOT MODULE v2.2 (Updated UA-CH)
 //  File: assets/honeypot.js
 //  Diload setelah config.js di index.html
 //
@@ -8,13 +8,12 @@
 //  [2] Login Brute-Force Trap  — lockout + alert setelah N gagal
 //  [3] DevTools Console Probe  — deteksi developer tools dibuka
 //  [4] Telegram Alert          — kirim notifikasi real-time ke HP
-//  [5] IP + Browser Fingerprint— kumpulkan data intruder
+//  [5] IP + Browser Fingerprint— kumpulkan data intruder (dengan UA-CH bypass OS spoofing)
 //  [6] Fake Terminal Overlay   — psikologis deterrent
 //  [7] localStorage Log        — log lokal, bisa dibaca owner
 //
-//  BUGFIX v2.1:
-//  - [BUG#1] Telegram: ENABLED default false di config → sekarang override jika BOT_TOKEN & CHAT_ID terisi
-//  - [BUG#6] Console probe tidak muncul berulang saat refresh — cukup 1x per sesi
+//  BUGFIX v2.2:
+//  - Added User-Agent Client Hints API untuk menangkap OS dan Device Model asli (Bypass Android 10 limit)
 // ════════════════════════════════════════════════════════════════
 
 (function () {
@@ -81,11 +80,12 @@
   };
 
   // ════════════════════════════════════════════════════════════════
-  //  [C] KUMPULKAN DATA INTRUDER (tanpa camera — browser block)
+  //  [C] KUMPULKAN DATA INTRUDER (dengan Client Hints API)
   // ════════════════════════════════════════════════════════════════
   let _ipCache = null;
 
   async function getIntruderData(extras = {}) {
+    // 1. Ambil IP Address
     if (!_ipCache) {
       try {
         const r = await Promise.race([
@@ -98,9 +98,26 @@
       }
     }
 
+    // 2. Tarik Data OS & Model Asli (Bypass User-Agent Spoofing)
+    let realOS = "N/A";
+    let deviceModel = "N/A";
+    
+    if (navigator.userAgentData) {
+      try {
+        const uaData = await navigator.userAgentData.getHighEntropyValues(["platformVersion", "model"]);
+        realOS = `${navigator.userAgentData.platform} ${uaData.platformVersion}`;
+        deviceModel = uaData.model || "Unknown";
+      } catch (e) {
+        realOS = "Blocked/Not Supported";
+      }
+    }
+
+    // 3. Return Payload
     return {
       ip        : _ipCache,
       ua        : navigator.userAgent,
+      real_os   : realOS,       
+      model     : deviceModel,  
       lang      : navigator.language,
       screen    : `${screen.width}x${screen.height}`,
       timezone  : Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -137,6 +154,7 @@
       `*URL:* \`${data.url}\``,
       data.trigger  ? `*Trigger:* \`${data.trigger}\``   : null,
       data.attempts ? `*Attempts:* \`${data.attempts}\`` : null,
+      `*OS Asli:* \`${data.real_os}\` | *Device:* \`${data.model}\``,
       `*UA:* \`${(data.ua || '').substring(0, 80)}\``,
       `*Screen:* \`${data.screen}\` | *TZ:* \`${data.timezone}\``,
       `*Lang:* \`${data.lang}\` | *Ref:* \`${data.referrer}\``,
