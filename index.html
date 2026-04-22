@@ -1210,16 +1210,71 @@ async function loadGitHubFilesAdmin(path = '') {
       const parentPath = path.substring(0, path.lastIndexOf('/'));
       tbody.innerHTML  = `<tr><td><a onclick="loadGitHubFilesAdmin('${parentPath}')" style="color:var(--accent); font-weight:bold;">[ .. ] Return</a></td><td>DIR</td><td class="hide-mobile">-</td><td></td></tr>`;
     }
+    // Map untuk simpan data file admin — hindari URL di inline onclick
+    const _adminFileMap = {};
     let fc = 0;
     data.forEach(item => {
       fc++;
-      const cid = `admin-date-${fc}`;
-      const tr  = document.createElement('tr');
+      const cid     = `admin-date-${fc}`;
+      const fileKey = 'adm_' + fc;
+      const tr      = document.createElement('tr');
+
       if (item.type === 'dir') {
-        tr.innerHTML = `<td><a onclick="loadGitHubFilesAdmin('${item.path}')" >📁 ${item.name}</a></td><td style="color:var(--accent);">Directory</td><td id="${cid}" class="hide-mobile">Scanning...</td><td><button class="btn btn-danger btn-sm" onclick="adminDeleteFolder('${item.path}')">DEL</button></td>`;
+        const aDir = document.createElement('a');
+        aDir.style.cursor = 'pointer';
+        aDir.textContent = '📁 ' + item.name;
+        aDir.addEventListener('click', () => loadGitHubFilesAdmin(item.path));
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn btn-danger btn-sm';
+        btnDel.textContent = 'DEL';
+        btnDel.addEventListener('click', () => adminDeleteFolder(item.path));
+        const td1 = document.createElement('td'); td1.appendChild(aDir);
+        const td2 = document.createElement('td'); td2.style.color = 'var(--accent)'; td2.textContent = 'Directory';
+        const td3 = document.createElement('td'); td3.className = 'hide-mobile'; td3.id = cid; td3.textContent = '-';
+        const td4 = document.createElement('td'); td4.appendChild(btnDel);
+        tr.append(td1, td2, td3, td4);
       } else {
-        const safeUrl = (item.download_url || '').replace(/'/g, '%27');
-        tr.innerHTML = `<td><a onclick="viewFile('${item.path}','${safeUrl}',${item.name.endsWith('.enc')})">📄 ${item.name}</a></td><td style="color:var(--text-3); font-size:11px;">${item.path}</td><td id="${cid}" class="hide-mobile">Scanning...</td><td style="display:flex; gap:4px; flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="adminEditFile('${item.path}','${safeUrl}','${item.sha}')">EDIT</button><button class="btn btn-ghost btn-sm" onclick="adminRenameFile('${item.path}','${item.sha}')">REN</button><button class="btn btn-danger btn-sm" onclick="deleteFile('${item.path}','${item.sha}')">DEL</button></td>`;
+        const isEnc = item.name.endsWith('.enc');
+        _adminFileMap[fileKey] = { path: item.path, url: item.download_url || '', sha: item.sha, enc: isEnc };
+
+        const aFile = document.createElement('a');
+        aFile.style.cursor = 'pointer';
+        aFile.textContent = '📄 ' + item.name;
+        aFile.addEventListener('click', () => {
+          const f = _adminFileMap[fileKey];
+          viewFile(f.path, f.url, f.enc);
+        });
+
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'btn btn-ghost btn-sm';
+        btnEdit.textContent = 'EDIT';
+        btnEdit.addEventListener('click', () => {
+          const f = _adminFileMap[fileKey];
+          adminEditFile(f.path, f.url, f.sha);
+        });
+
+        const btnRen = document.createElement('button');
+        btnRen.className = 'btn btn-ghost btn-sm';
+        btnRen.textContent = 'REN';
+        btnRen.addEventListener('click', () => {
+          const f = _adminFileMap[fileKey];
+          adminRenameFile(f.path, f.sha);
+        });
+
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn btn-danger btn-sm';
+        btnDel.textContent = 'DEL';
+        btnDel.addEventListener('click', () => {
+          const f = _adminFileMap[fileKey];
+          deleteFile(f.path, f.sha);
+        });
+
+        const td1 = document.createElement('td'); td1.appendChild(aFile);
+        const td2 = document.createElement('td'); td2.style.cssText = 'color:var(--text-3); font-size:11px;'; td2.textContent = item.path;
+        const td3 = document.createElement('td'); td3.className = 'hide-mobile'; td3.id = cid; td3.textContent = 'Scanning...';
+        const td4 = document.createElement('td'); td4.style.cssText = 'display:flex; gap:4px; flex-wrap:wrap;';
+        td4.append(btnEdit, btnRen, btnDel);
+        tr.append(td1, td2, td3, td4);
       }
       tbody.appendChild(tr);
       if (item.type !== 'dir') fetchCommitDate(item.path, cid);
@@ -1343,6 +1398,9 @@ async function adminDeleteFolder(folderPath) {
 /* ════════════════════════════════════════════════════════════════
    PUBLIC LISTING
 ════════════════════════════════════════════════════════════════ */
+// Map untuk simpan URL file publik — hindari inline URL di onclick
+const _pubFileMap = {};
+
 async function loadPublicDirectory(path = '') {
   const tbody = document.getElementById('public-files-body');
   document.getElementById('public-title').textContent = path === '' ? 'Index of /' : `Index of /${path}`;
@@ -1353,21 +1411,57 @@ async function loadPublicDirectory(path = '') {
     tbody.innerHTML = '';
     if (path !== '') {
       const parentPath = path.substring(0, path.lastIndexOf('/'));
-      tbody.innerHTML  = `<tr><td><a onclick="loadPublicDirectory('${parentPath}')" style="color:var(--accent); font-weight:bold;">[ .. ] /BACK</a></td><td>—</td><td class="hide-mobile">—</td><td>—</td></tr>`;
+      const backTr = document.createElement('tr');
+      const backA  = document.createElement('a');
+      backA.style.cssText = 'color:var(--accent); font-weight:bold; cursor:pointer;';
+      backA.textContent = '[ .. ] /BACK';
+      backA.addEventListener('click', () => loadPublicDirectory(parentPath));
+      const backTd = document.createElement('td');
+      backTd.appendChild(backA);
+      backTr.innerHTML = '<td></td><td>—</td><td class="hide-mobile">—</td><td>—</td>';
+      backTr.cells[0].replaceWith(backTd);
+      tbody.appendChild(backTr);
     }
     let fc = 0;
     data.forEach(item => {
-      // Sembunyikan file infrastruktur dari tampilan publik
       if (PRIVATE_FILES.includes(item.name)) return;
       if (item.name === 'assets' && item.type === 'dir') return;
       fc++;
       const cid = `pub-date-${fc}`;
       const tr  = document.createElement('tr');
       if (item.type === 'dir') {
-        tr.innerHTML = `<td><a onclick="loadPublicDirectory('${item.path}')">📁 ${item.name}/</a></td><td>—</td><td id="${cid}" class="hide-mobile">Scanning...</td><td style="color:var(--accent);">Folder</td>`;
+        const a = document.createElement('a');
+        a.style.cursor = 'pointer';
+        a.textContent = '📁 ' + item.name + '/';
+        a.addEventListener('click', () => loadPublicDirectory(item.path));
+        const td1 = document.createElement('td'); td1.appendChild(a);
+        const td2 = document.createElement('td'); td2.textContent = '—';
+        const td3 = document.createElement('td'); td3.className = 'hide-mobile'; td3.id = cid; td3.textContent = 'Scanning...';
+        const td4 = document.createElement('td'); td4.style.color = 'var(--accent)'; td4.textContent = 'Folder';
+        tr.append(td1, td2, td3, td4);
       } else {
         const isEnc = item.name.endsWith('.enc');
-        tr.innerHTML = `<td><a onclick="viewFile('${item.path}','${item.download_url}',${isEnc})">${isEnc ? '🔒' : '📄'} ${item.name}</a></td><td>${Math.ceil(item.size/1024)} KB</td><td id="${cid}" class="hide-mobile">Scanning...</td><td>${isEnc ? '<span style="color:var(--danger); font-weight:bold;">LOCKED</span>' : '<span style="color:var(--text-3);">Clear</span>'}</td>`;
+        // Simpan URL di map, bukan di onclick string
+        const fileKey = 'pub_' + fc;
+        _pubFileMap[fileKey] = { path: item.path, url: item.download_url || '', enc: isEnc };
+
+        const a = document.createElement('a');
+        a.style.cursor = 'pointer';
+        a.textContent = (isEnc ? '🔒' : '📄') + ' ' + item.name;
+        a.addEventListener('click', () => {
+          const f = _pubFileMap[fileKey];
+          viewFile(f.path, f.url, f.enc);
+        });
+        const td1 = document.createElement('td'); td1.appendChild(a);
+        const td2 = document.createElement('td'); td2.textContent = Math.ceil(item.size / 1024) + ' KB';
+        const td3 = document.createElement('td'); td3.className = 'hide-mobile'; td3.id = cid; td3.textContent = 'Scanning...';
+        const td4 = document.createElement('td');
+        if (isEnc) {
+          td4.innerHTML = '<span style="color:var(--danger); font-weight:bold;">LOCKED</span>';
+        } else {
+          td4.innerHTML = '<span style="color:var(--text-3);">Clear</span>';
+        }
+        tr.append(td1, td2, td3, td4);
       }
       tbody.appendChild(tr);
       fetchCommitDate(item.path, cid);
