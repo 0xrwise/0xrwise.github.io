@@ -1,0 +1,28 @@
+# ════════════════════════════════════════
+#  0XRWISE .gitignore
+#  FILE SENSITIF — JANGAN DI-COMMIT!
+# ════════════════════════════════════════
+
+# Credentials & config asli (gunakan config.sample.js sebagai template)
+config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs lokal
+*.log
+npm-debug.log*
+
+# Node (jika ada build tools)
+node_modules/
+dist/
+.env
+.env.local
