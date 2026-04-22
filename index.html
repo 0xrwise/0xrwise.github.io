@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0xrwise // TERMINAL</title>
+
+  <!-- ── FAVICON ── -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" />
+
+  <!-- ── OPEN GRAPH ── -->
+  <meta property="og:type"         content="website" />
+  <meta property="og:site_name"    content="0xrwise // TERMINAL" />
+  <meta property="og:title"        id="og-title"       content="0xrwise // TERMINAL" />
+  <meta property="og:description"  id="og-description" content="Secure digital knowledge base. Encrypted notes, markdown articles, and pastebin — powered by GitHub." />
+  <meta property="og:image"        id="og-image"       content="https://opengraph.githubassets.com/1/0xrwise" />
+  <meta property="og:url"          id="og-url"         content="https://0xrwise.github.io/" />
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       id="tw-title"       content="0xrwise // TERMINAL" />
+  <meta name="twitter:description" id="tw-description" content="Secure digital knowledge base." />
+  <meta name="twitter:image"       id="tw-image"       content="https://opengraph.githubassets.com/1/0xrwise" />
+  <meta name="description"         id="meta-desc"      content="Secure digital knowledge base. Encrypted notes and markdown articles." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/lib/marked.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked-highlight@2.1.1/lib/index.umd.js"></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+  <!-- ══ CREDENTIALS (gitignored, lihat config.sample.js) ══ -->
+  <script src="config.js"></script>
+
+  <!-- ══ HONEYPOT MODULE (URL probe + DevTools + Telegram) ══ -->
+  <script src="assets/honeypot.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════════════════════
+   THEME: SECRET AGENT TERMINAL
+════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #030303;
+  --surface:   #0a0a0a;
+  --border:    #1a1a1a;
+  --border-lt: #333;
+  --text:      #d4d4d4;
+  --text-2:    #888888;
+  --text-3:    #555555;
+  --accent:    #00ff41;
+  --accent-dk: #00b32d;
+  --danger:    #ff003c;
+  --mono:      'JetBrains Mono', 'Fira Code', monospace;
+  --glow:      0 0 8px rgba(0, 255, 65, 0.4);
+  --glow-text: 0 0 5px rgba(0, 255, 65, 0.6);
+}
+
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+html, body {
+  height: 100vh;
+  background: var(--bg); color: var(--text);
+  font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* CRT Scanline Effect */
+body::after {
+  content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%);
+  background-size: 100% 4px; z-index: 9999; pointer-events: none; opacity: 0.5;
+}
+
+a { color: var(--accent); text-decoration: none; cursor: pointer; transition: all 0.2s; }
+a:hover { text-shadow: var(--glow-text); text-decoration: underline; text-decoration-style: dashed; }
+hr { border: none; border-top: 1px dashed var(--border-lt); margin: 15px 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   PAGE CONTAINERS
+════════════════════════════════════════════════════════════════ */
+#public-page, #admin-page, #viewer-page {
+  display: none; flex-direction: column; height: 100vh; width: 100vw;
+}
+
+/* ── PUBLIC PAGE ── */
+.public-content-wrapper {
+  flex: 1; overflow-y: auto; padding: 20px;
+  display: flex; flex-direction: column;
+  max-width: 1000px; margin: 0 auto; width: 100%;
+}
+.dir-header h1 { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); text-shadow: var(--glow-text); text-transform: uppercase; margin-bottom: 5px; }
+.dir-header p  { font-size: 12px; color: var(--text-2); margin-top: 0; }
+
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--accent); margin-top: 15px; margin-bottom: 20px; }
+.dir-table, .gh-table { width: 100%; min-width: 600px; border-collapse: collapse; border-top: 1px solid var(--accent); }
+.dir-table th, .gh-table th { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); padding: 12px 10px; text-align: left; background: rgba(0,255,65,0.05); border-bottom: 1px solid var(--accent); }
+.dir-table tbody tr, .gh-table tbody tr { border-bottom: 1px dashed var(--border-lt); transition: background .1s; }
+.dir-table tbody tr:hover, .gh-table tbody tr:hover { background: rgba(0,255,65,0.08); }
+.dir-table td, .gh-table td { padding: 12px 10px; font-size: 13px; background: transparent; }
+.dir-table td:nth-child(3), .gh-table td:nth-child(3) { color: var(--text-3); font-size: 11px; }
+.dir-table td a, .gh-table td a { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.dir-table td a:hover, .gh-table td a:hover { color: var(--accent); }
+.dir-table tr.parent td a, .gh-table tr.parent td a { color: var(--accent); font-weight: bold; }
+
+.ascii-footer { margin-top: auto; padding-top: 20px; padding-bottom: 20px; user-select: none; }
+.ascii-art { font-family: var(--mono); font-size: 10px; line-height: 1.2; color: var(--border-lt); cursor: pointer; display: inline-block; transition: all .3s; }
+.ascii-art:hover { color: var(--accent); text-shadow: var(--glow); }
+.ascii-art.clicking { color: var(--danger); text-shadow: 0 0 10px red; }
+.server-sig { font-size: 11px; color: var(--text-3); margin-top: 15px; border-top: 1px dashed var(--border-lt); padding-top: 10px; text-transform: uppercase; }
+
+.agent-tagline { font-family: var(--mono); display: inline-block; }
+.agent-tagline .cursor { display: inline-block; width: 8px; background: var(--accent); animation: blink 0.8s step-end infinite; margin-left: 2px; vertical-align: text-bottom; height: 1.1em; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.click-dots { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; }
+.click-dot  { width: 6px; height: 6px; background: var(--border-lt); transition: background .2s; }
+.click-dot.filled { background: var(--danger); box-shadow: 0 0 5px var(--danger); }
+
+/* ════════════════════════════════════════════════════════════════
+   MODALS
+════════════════════════════════════════════════════════════════ */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; padding: 15px; }
+.overlay.active { opacity: 1; pointer-events: all; }
+.login-box, .url-box { background: var(--surface); border: 1px solid var(--accent); box-shadow: var(--glow); padding: 25px; width: 100%; max-width: 400px; transform: scale(0.95); transition: transform .2s; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto; }
+.overlay.active .login-box, .overlay.active .url-box { transform: scale(1); }
+
+.login-box h2, .url-box h3 { font-size: 14px; font-weight: 700; color: var(--accent); text-shadow: var(--glow-text); margin-bottom: 15px; text-transform: uppercase; margin-top: 0; }
+.login-box label, .url-box label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+input[type="text"], input[type="password"] { width: 100%; padding: 10px 12px; font-family: var(--mono); font-size: 13px; border: 1px solid var(--border-lt); background: #000; color: var(--accent); outline: none; margin-bottom: 15px; transition: all .2s; border-radius: 0; }
+input:focus { border-color: var(--accent); box-shadow: inset 0 0 5px rgba(0,255,65,0.2); }
+.error { font-size: 11px; color: var(--danger); text-shadow: 0 0 4px red; min-height: 16px; margin-bottom: 10px; text-transform: uppercase; }
+
+/* Custom Checkbox */
+.checkbox-container { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer; }
+.checkbox-container input { display: none; }
+.checkmark { width: 16px; height: 16px; border: 1px solid var(--border-lt); background: #000; display: inline-block; position: relative; transition: all 0.2s; flex-shrink: 0; }
+.checkbox-container input:checked + .checkmark { border-color: var(--accent); background: rgba(0,255,65,0.2); box-shadow: var(--glow); }
+.checkbox-container input:checked + .checkmark::after { content: "✓"; position: absolute; top: -2px; left: 2px; color: var(--accent); font-size: 12px; font-weight: bold; }
+.checkbox-container label { cursor: pointer; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0; line-height: 1.2; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; font-family: var(--mono); font-size: 12px; font-weight: 700; text-transform: uppercase; cursor: pointer; border: 1px solid transparent; background: transparent; transition: all .15s; border-radius: 0; }
+.btn:active { transform: translateY(2px); }
+.btn-primary { color: var(--bg); background: var(--accent); border-color: var(--accent); box-shadow: var(--glow); width: 100%; justify-content: center; }
+.btn-primary:hover { background: #fff; border-color: #fff; box-shadow: 0 0 15px #fff; }
+.btn-ghost { color: var(--accent); border-color: var(--accent); }
+.btn-ghost:hover { background: rgba(0,255,65,0.1); box-shadow: inset 0 0 8px rgba(0,255,65,0.3); }
+.btn-danger { color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: rgba(255,0,60,0.1); box-shadow: inset 0 0 8px rgba(255,0,60,0.3); }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.url-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: auto; }
+
+/* ════════════════════════════════════════════════════════════════
+   HONEYPOT TERMINAL OVERLAY
+════════════════════════════════════════════════════════════════ */
+#hp-terminal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.96);
+  z-index: 9000; display: none;
+  align-items: center; justify-content: center;
+  padding: 15px; backdrop-filter: blur(6px);
+}
+#hp-terminal-overlay.active { display: flex; }
+
+#hp-terminal-box {
+  position: relative; width: 100%; max-width: 620px;
+  background: #000; border: 1px solid var(--danger);
+  box-shadow: 0 0 30px rgba(255,0,60,0.4), inset 0 0 60px rgba(255,0,60,0.03);
+  font-family: var(--mono); max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: hp-flicker 0.08s linear 2;
+}
+@keyframes hp-flicker { 0%,100%{opacity:1} 50%{opacity:0.85} }
+
+#hp-terminal-titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; background: #0d0000;
+  border-bottom: 1px solid var(--danger); flex-shrink: 0;
+}
+#hp-terminal-titlebar span { font-size: 10px; font-weight: 700; letter-spacing: .15em; color: var(--danger); text-transform: uppercase; text-shadow: 0 0 6px red; }
+#hp-terminal-titlebar button { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-family: var(--mono); font-size: 10px; padding: 3px 10px; cursor: pointer; text-transform: uppercase; letter-spacing: .1em; }
+#hp-terminal-titlebar button:hover { background: var(--danger); color: #000; }
+
+#hp-terminal-body { flex: 1; overflow-y: auto; padding: 16px 18px; font-size: 12px; line-height: 1.85; color: #cc0000; }
+#hp-terminal-body .hp-line { display: block; white-space: pre-wrap; word-break: break-all; }
+#hp-terminal-body .hp-line.green  { color: var(--accent); }
+#hp-terminal-body .hp-line.white  { color: #e0e0e0; }
+#hp-terminal-body .hp-line.dim    { color: #444; }
+#hp-terminal-body .hp-line.yellow { color: #f0c040; }
+#hp-terminal-body .hp-line.red    { color: var(--danger); text-shadow: 0 0 6px red; }
+#hp-terminal-body .hp-line.cyan   { color: #00d8ff; }
+#hp-terminal-body .hp-cursor { display: inline-block; width: 8px; height: 1em; background: var(--danger); animation: blink 0.7s step-end infinite; vertical-align: text-bottom; margin-left: 2px; }
+#hp-terminal-scanline { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,0,0,0.015) 2px, rgba(255,0,0,0.015) 4px); }
+
+/* ════════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD
+════════════════════════════════════════════════════════════════ */
+.admin-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; height: 50px; background: #080808; border-bottom: 1px solid var(--accent); box-shadow: 0 2px 10px rgba(0,255,65,0.1); flex-shrink: 0; overflow-x: auto; }
+.admin-bar .brand { font-size: 13px; font-weight: 700; letter-spacing: .1em; color: var(--accent); text-shadow: var(--glow-text); text-transform: uppercase; white-space: nowrap; margin-right: 15px; }
+.admin-bar .brand span { color: #fff; }
+.admin-tabs { display: flex; gap: 5px; }
+.admin-tab { padding: 8px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-3); cursor: pointer; transition: all .2s; white-space: nowrap; }
+.admin-tab:hover { color: var(--accent); }
+.admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); text-shadow: var(--glow-text); background: rgba(0,255,65,0.05); }
+
+.tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.tab-panel.active { display: flex; }
+
+/* ── PASTEBIN & FILES ── */
+.paste-toolbar { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-shrink: 0; border-bottom: 1px dashed var(--border-lt); padding: 10px 15px; flex-wrap: wrap; }
+.paste-title { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); text-shadow: var(--glow-text); white-space: nowrap; }
+.toolbar-actions { display: flex; gap: 8px; }
+#paste-area { flex: 1; width: 100%; resize: none; background: #020202; border: none; color: var(--accent); font-size: 13.5px; padding: 15px; outline: none; tab-size: 2; line-height: 1.7; transition: all .2s; overflow-y: auto; }
+#paste-area:focus { box-shadow: inset 0 0 15px rgba(0,255,65,0.1); }
+#tab-files { overflow-y: auto; padding: 0 15px 15px; }
+
+/* ── BLOG EDITOR ── */
+.editor-toolbar { display: flex; align-items: center; gap: 4px; padding: 8px 15px; background: #080808; border-bottom: 1px solid var(--border-lt); flex-shrink: 0; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+.editor-toolbar::-webkit-scrollbar { height: 4px; display: none; }
+.editor-toolbar .sep { width: 1px; height: 18px; background: var(--border-lt); margin: 0 4px; flex-shrink: 0; }
+.tb-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; color: var(--text-2); cursor: pointer; font-size: 13px; font-weight: 700; transition: all .2s; flex-shrink: 0; }
+.tb-btn:hover { background: rgba(0,255,65,0.1); border-color: var(--accent); color: var(--accent); text-shadow: var(--glow-text); }
+.tb-btn.wide { width: auto; padding: 0 10px; font-size: 11px; }
+.editor-view-toggle { margin-left: auto; display: flex; border: 1px solid var(--border-lt); flex-shrink: 0; }
+.view-btn { padding: 6px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: transparent; border: none; color: var(--text-3); cursor: pointer; border-right: 1px solid var(--border-lt); }
+.view-btn:last-child { border-right: none; }
+.view-btn.active { background: var(--accent); color: var(--bg); text-shadow: none; }
+.editor-body { flex: 1; display: flex; overflow: hidden; flex-direction: row; }
+#md-input { flex: 1; resize: none; background: #040404; border: none; border-right: 1px dashed var(--border-lt); color: var(--text); font-size: 13.5px; padding: 15px; outline: none; overflow-y: auto; tab-size: 2; line-height: 1.8; }
+#md-input:focus { background: #020202; }
+
+/* ════════════════════════════════════════════════════════════════
+   VIEWER & MARKDOWN
+════════════════════════════════════════════════════════════════ */
+#md-preview, #viewer-content {
+  flex: 1; overflow-y: auto; padding: 20px; background: #060606;
+  font-family: var(--mono); font-size: 14.5px; line-height: 1.8; color: var(--text);
+  box-shadow: inset 20px 0 20px -20px rgba(0,0,0,0.8); word-wrap: break-word;
+}
+#md-input.full, #md-preview.full { flex: 1; border-right: none; box-shadow: none; }
+#md-input.hidden, #md-preview.hidden { display: none; }
+#md-preview h1, #md-preview h2, #md-preview h3, #md-preview h4,
+#viewer-content h1, #viewer-content h2, #viewer-content h3, #viewer-content h4 {
+  font-family: var(--mono); font-weight: 700; color: var(--accent); margin: 1.5em 0 .8em;
+  line-height: 1.3; text-transform: uppercase; text-shadow: var(--glow-text); letter-spacing: 1px;
+}
+#md-preview h1, #viewer-content h1 { font-size: 1.6em; border-bottom: 2px solid var(--accent); padding-bottom: 8px; display: inline-block; }
+#md-preview h2, #viewer-content h2 { font-size: 1.3em; border-bottom: 1px dashed var(--border-lt); padding-bottom: 5px; display: block; }
+#md-preview p, #viewer-content p { margin-bottom: 1.2em; }
+#md-preview blockquote, #viewer-content blockquote { border-left: 4px solid var(--accent); margin: 1.5em 0; padding: 10px 15px; background: rgba(0,255,65,0.05); color: var(--text-2); font-style: italic; }
+#md-preview code, #viewer-content code { font-family: var(--mono); font-size: 0.9em; background: #111; border: 1px solid var(--border-lt); padding: 2px 6px; color: #ffeb3b; word-wrap: break-word; }
+#md-preview pre, #viewer-content pre { margin: 1.5em 0; border: 1px solid var(--border-lt); border-left: 4px solid var(--accent); background: #000; overflow-x: auto; padding: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+#md-preview pre code, #viewer-content pre code { background: none; border: none; padding: 0; font-size: 12px; color: inherit; white-space: pre; }
+#md-preview img, #viewer-content img, #md-preview iframe, #viewer-content iframe { max-width: 100%; height: auto; margin: 1.5em 0; border: 1px solid var(--border-lt); filter: grayscale(20%); transition: filter 0.3s; }
+#md-preview img:hover, #viewer-content img:hover { filter: grayscale(0%); border-color: var(--accent); box-shadow: var(--glow); }
+#md-preview a, #viewer-content a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed var(--accent); padding-bottom: 1px; word-break: break-all; }
+#md-preview a:hover, #viewer-content a:hover { background: rgba(0,255,65,0.2); text-shadow: var(--glow-text); }
+#md-preview ul, #md-preview ol, #viewer-content ul, #viewer-content ol { margin: 1em 0; padding-left: 20px; color: var(--text); }
+#md-preview li, #viewer-content li { margin-bottom: 6px; }
+#md-preview li::marker, #viewer-content li::marker { color: var(--accent); }
+#md-preview hr, #viewer-content hr { border-color: var(--border-lt); margin: 2em 0; }
+#md-preview table, #viewer-content table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 12.5px; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#md-preview th, #viewer-content th { background: rgba(0,255,65,0.08); color: var(--accent); font-weight: 700; text-align: left; padding: 10px 14px; border: 1px solid var(--border-lt); text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+#md-preview td, #viewer-content td { padding: 9px 14px; border: 1px solid var(--border); color: var(--text); vertical-align: top; white-space: nowrap; }
+#md-preview tbody tr:hover, #viewer-content tbody tr:hover { background: rgba(0,255,65,0.05); }
+#md-preview .katex, #viewer-content .katex { color: #00d8ff; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; right: 20px; background: #000; color: var(--accent); border: 1px solid var(--accent); padding: 12px 18px; font-size: 11px; font-weight: 700; text-transform: uppercase; box-shadow: var(--glow); z-index: 9999; transform: translateY(20px); opacity: 0; transition: all .3s cubic-bezier(0.68,-0.55,0.265,1.55); pointer-events: none; max-width: 80vw; }
+.toast::before { content: ">_ "; color: #fff; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { border-color: var(--danger); color: var(--danger); box-shadow: 0 0 10px rgba(255,0,60,0.5); }
+.toast.error::before { content: "[ERR] "; color: #fff; }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+  .editor-body { flex-direction: column; }
+  #md-input, #md-preview { flex: 1; height: 50%; border-right: none; border-bottom: 1px dashed var(--border-lt); }
+  #md-input.full, #md-preview.full { height: 100%; border-bottom: none; }
+  .editor-view-toggle { margin-left: 0; margin-top: 5px; width: 100%; justify-content: space-between; order: -1; margin-bottom: 10px; }
+  .view-btn { flex: 1; text-align: center; }
+  .editor-toolbar { padding: 10px; }
+  .paste-title { font-size: 10px; }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  html, body { font-size: 14px; }
+  .public-content-wrapper { max-width: 100%; padding: 20px 25px; }
+  .editor-body { flex-direction: row; }
+  #md-input, #md-preview { height: 100%; }
+  .ascii-art { font-size: 9px; }
+  .admin-bar { padding: 0 20px; }
+  .login-box, .url-box { max-width: 480px; padding: 30px; }
+}
+@media (min-width: 1025px) {
+  html, body { font-size: 14px; }
+  .public-content-wrapper { max-width: 1100px; padding: 30px 40px; }
+  .editor-body { flex-direction: row; }
+  #md-input, #md-preview { height: 100%; }
+  .dir-table, .gh-table { min-width: unset; }
+  .login-box, .url-box { max-width: 480px; }
+  .ascii-art { font-size: 11px; }
+  .admin-bar { padding: 0 25px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════
+     PUBLIC PAGE
+════════════════════════════════════════════════════════════════ -->
+<div id="public-page">
+  <!-- NAV BAR -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:0 15px; height:42px; background:#080808; border-bottom:1px solid var(--border-lt); flex-shrink:0;">
+    <span style="font-size:12px; font-weight:700; color:var(--accent); letter-spacing:.1em; white-space:nowrap; cursor:pointer;"
+          onclick="loadPublicDirectory(''); window.location.hash=''">
+      0XRWISE <span style="color:var(--text-3);">// PUBLIC</span>
+    </span>
+    <div style="display:flex; gap:2px; align-items:center;">
+      <button title="Home"   onclick="loadPublicDirectory(''); window.location.hash=''" style="background:transparent; border:none; color:var(--accent); font-size:16px; cursor:pointer; padding:6px 8px; line-height:1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌂</button>
+      <button title="Search" id="nav-search-btn"                                        style="background:transparent; border:none; color:var(--accent); font-size:16px; cursor:pointer; padding:6px 8px; line-height:1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌕</button>
+      <button title="About"  onclick="window.location.hash='about'"                     style="background:transparent; border:none; color:var(--accent); font-size:16px; cursor:pointer; padding:6px 8px; line-height:1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⊙</button>
+    </div>
+  </div>
+
+  <!-- SEARCH BAR -->
+  <div id="search-bar" style="display:none; padding:8px 15px; background:#060606; border-bottom:1px solid var(--border-lt); flex-shrink:0;">
+    <div style="display:flex; gap:8px; align-items:center; width:100%;">
+      <span style="color:var(--accent); font-size:11px; white-space:nowrap; flex-shrink:0; line-height:1;">SEARCH:~$</span>
+      <input type="text" id="search-input" placeholder="scan files..." style="flex:1; min-width:0; padding:6px 10px; font-family:var(--mono); font-size:12px; border:1px solid var(--border-lt); background:#000; color:var(--accent); outline:none; border-radius:0; height:32px;" />
+      <button class="btn btn-ghost btn-sm" id="search-close-btn" style="flex-shrink:0; height:32px; padding:0 10px;">ESC</button>
+    </div>
+    <div id="search-results" style="margin-top:8px; font-size:12px; color:var(--text-2); max-height:200px; overflow-y:auto;"></div>
+  </div>
+
+  <!-- FILE LISTING -->
+  <div class="public-content-wrapper">
+    <div class="dir-header">
+      <h1 id="public-title">Index of /</h1>
+      <p>System: 0xrwise_mainframe // Access: Public</p>
+    </div>
+    <div class="table-responsive">
+      <table class="dir-table">
+        <thead>
+          <tr>
+            <th>Filename</th>
+            <th>Size</th>
+            <th class="hide-mobile">Last Modified</th>
+            <th>Security</th>
+          </tr>
+        </thead>
+        <tbody id="public-files-body">
+          <tr><td colspan="4" style="color:var(--accent);">Establishing secure connection to GitHub Server...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ASCII FOOTER -->
+    <div class="ascii-footer">
+      <pre class="ascii-art" id="ascii-logo" title="Initiate Override...">
+ ██████╗ ██╗  ██╗██████╗ ██╗    ██╗██╗███████╗███████╗
+██╔═████╗╚██╗██╔╝██╔══██╗██║    ██║██║██╔════╝██╔════╝
+██║██╔██║ ╚███╔╝ ██████╔╝██║ █╗ ██║██║███████╗█████╗  
+████╔╝██║ ██╔██╗ ██╔══██╗██║███╗██║██║╚════██║██╔══╝  
+╚██████╔╝██╔╝ ██╗██║  ██║╚███╔███╔╝██║███████║███████╗
+ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝</pre>
+      <div style="height:16px; margin-top:4px;">
+        <span id="click-dots-wrap" class="click-dots" style="display:none;">
+          <span class="click-dot" id="d1"></span><span class="click-dot" id="d2"></span>
+          <span class="click-dot" id="d3"></span><span class="click-dot" id="d4"></span>
+          <span class="click-dot" id="d5"></span>
+        </span>
+      </div>
+      <div class="agent-tagline" id="agent-tagline" style="margin-top:12px; font-size:11.5px; color:var(--accent); letter-spacing:0.12em; min-height:20px; opacity:0.85;"></div>
+      <p class="server-sig">Server: Apache/2.4.62 (Debian) | Host: 0xrwise.github.io | Port: 443</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     FILE VIEWER PAGE
+════════════════════════════════════════════════════════════════ -->
+<div id="viewer-page">
+  <div class="admin-bar" style="border-bottom-color: var(--text-2);">
+    <span class="brand" style="color:var(--text-2); text-shadow:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:50%;">
+      FILE_READER // <span id="viewer-title" style="color:var(--accent); text-shadow:var(--glow-text); text-transform:none;"></span>
+    </span>
+    <div style="display:flex; gap:6px; flex-shrink:0;">
+      <button class="btn btn-ghost btn-sm" id="viewer-share-btn">[ SHARE ]</button>
+      <button class="btn btn-ghost btn-sm" id="viewer-copy-btn">[ COPY ]</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">[ ← ]</button>
+    </div>
+  </div>
+  <!-- SHARE URL BAR -->
+  <div id="viewer-share-bar" style="display:none; padding:8px 15px; background:#060606; border-bottom:1px solid var(--accent); flex-shrink:0; align-items:center; gap:8px; flex-wrap:wrap;">
+    <span style="color:var(--text-3); font-size:10px; white-space:nowrap;">SHARE_URL:~$</span>
+    <input type="text" id="viewer-share-url" readonly style="flex:1; min-width:0; padding:5px 8px; font-family:var(--mono); font-size:11px; border:1px solid var(--border-lt); background:#000; color:var(--accent); outline:none; border-radius:0; cursor:pointer;" onclick="this.select()" />
+    <button class="btn btn-primary btn-sm" id="viewer-share-copy-btn" style="flex-shrink:0;">[ COPY URL ]</button>
+  </div>
+  <div id="viewer-content"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════════ -->
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="login-overlay">
+  <div class="login-box">
+    <h2>// ROOT_ACCESS_REQUIRED</h2>
+    <p style="font-size:11px; color:var(--text-3); margin-bottom:20px;">Enter credentials to bypass security protocol.</p>
+    <label for="username-input">Operator ID</label>
+    <input type="text"     id="username-input" placeholder="0xrwise"           autocomplete="off" />
+    <label for="pw-input">Passphrase</label>
+    <input type="password" id="pw-input"        placeholder="••••••••"          autocomplete="off" />
+    <label for="pat-input" style="color:var(--accent);">Auth Token (PAT)</label>
+    <input type="password" id="pat-input"       placeholder="ghp_••••••••••••" autocomplete="off" />
+    <div class="checkbox-container">
+      <input type="checkbox" id="remember-me" checked />
+      <span class="checkmark"></span>
+      <label for="remember-me">Remember Token Locally</label>
+    </div>
+    <div class="error" id="login-error"></div>
+    <div class="url-actions">
+      <button class="btn btn-ghost" onclick="window.history.back()">Abort</button>
+      <button class="btn btn-primary" id="login-btn" style="width:auto;">Execute</button>
+    </div>
+  </div>
+</div>
+
+<!-- PUBLISH MODAL -->
+<div class="overlay" id="publish-overlay">
+  <div class="url-box">
+    <h3>DEPLOY TO REPOSITORY</h3>
+    <label>Set Directory / Filename</label>
+    <input type="text" id="pub-filename" placeholder="e.g. notes/intel.md" />
+    <div class="checkbox-container">
+      <input type="checkbox" id="pub-private" />
+      <span class="checkmark" style="border-color:var(--danger);"></span>
+      <label for="pub-private" style="color:var(--danger);">[ ! ] Enable AES Encryption</label>
+    </div>
+    <p style="font-size:10.5px; color:var(--text-3); margin-bottom:20px;">Warning: Encrypted files (.enc) require operator passphrase to view on public interface.</p>
+    <div class="url-actions">
+      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">Abort</button>
+      <button class="btn btn-primary btn-sm" id="pub-ok">Confirm Push</button>
+    </div>
+  </div>
+</div>
+
+<!-- URL DIALOG -->
+<div class="overlay" id="url-dialog">
+  <div class="url-box">
+    <h3 id="url-dialog-title">AWAITING URL INPUT</h3>
+    <input type="text" id="url-dialog-input" placeholder="https://" />
+    <div class="url-actions">
+      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="url-dialog-ok">Inject</button>
+    </div>
+  </div>
+</div>
+
+<!-- DECRYPT MODAL -->
+<div class="overlay" id="decrypt-overlay">
+  <div class="url-box">
+    <h3 style="color:var(--danger); text-shadow:0 0 10px red;">ENCRYPTED PAYLOAD</h3>
+    <p style="font-size:11px; color:var(--text-2); margin-bottom:15px;">Target file is locked via AES algorithm. Provide decryption key.</p>
+    <input type="password" id="decrypt-pw" placeholder="Enter Key..." />
+    <div class="error" id="decrypt-error"></div>
+    <div class="url-actions">
+      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">Cancel</button>
+      <button class="btn btn-danger btn-sm" id="decrypt-ok">Decrypt</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     ADMIN PAGE
+════════════════════════════════════════════════════════════════ -->
+<div id="admin-page">
+  <div class="admin-bar">
+    <span class="brand">0<span>x</span>rwise <span style="color:#fff; font-weight:400;">// root</span></span>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="tab-paste">Notepad</button>
+      <button class="admin-tab"        data-tab="tab-blog">Editor</button>
+      <button class="admin-tab"        data-tab="tab-files">Files</button>
+      <button id="logout-btn" class="admin-tab" style="margin-left:auto; color:var(--danger);">Logout</button>
+    </div>
+  </div>
+
+  <!-- NOTEPAD TAB -->
+  <div class="tab-panel active" id="tab-paste">
+    <div class="paste-toolbar">
+      <span class="paste-title">Secure Notepad</span>
+      <div class="toolbar-actions">
+        <button class="btn btn-ghost btn-sm" id="paste-clear-btn">[ WIPE ]</button>
+        <button class="btn btn-primary btn-sm" id="paste-publish-btn">Execute Push</button>
+      </div>
+    </div>
+    <textarea id="paste-area" spellcheck="false" placeholder="// Initializing empty buffer...&#10;// Type notes or script logic here."></textarea>
+    <div style="font-size:10px; color:var(--text-3); padding:4px 15px; flex-shrink:0; border-top:1px solid var(--border);" id="paste-save-status">// Draft saved locally</div>
+  </div>
+
+  <!-- BLOG EDITOR TAB -->
+  <div class="tab-panel" id="tab-blog">
+    <div class="editor-toolbar">
+      <button class="btn btn-primary btn-sm" id="blog-publish-btn" style="margin-right:15px;">Deploy Article</button>
+      <button class="tb-btn" data-action="bold"        title="Bold"><b>B</b></button>
+      <button class="tb-btn" data-action="italic"      title="Italic"><i>I</i></button>
+      <button class="tb-btn" data-action="strike"      title="Strikethrough"><s>S</s></button>
+      <button class="tb-btn" data-action="code-inline" title="Inline code">&#96;</button>
+      <div class="sep"></div>
+      <button class="tb-btn wide" data-action="h2"    title="Heading 2">H2</button>
+      <button class="tb-btn wide" data-action="h3"    title="Heading 3">H3</button>
+      <div class="sep"></div>
+      <button class="tb-btn" data-action="quote"      title="Blockquote">❝</button>
+      <button class="tb-btn" data-action="ul"         title="Unordered list">≡</button>
+      <button class="tb-btn" data-action="ol"         title="Ordered list">①</button>
+      <button class="tb-btn" data-action="hr"         title="Horizontal rule">—</button>
+      <button class="tb-btn" data-action="code-block" title="Code block">{}</button>
+      <div class="sep"></div>
+      <button class="tb-btn" data-action="image"      title="Insert image">🖼</button>
+      <button class="tb-btn" data-action="video"      title="Embed YouTube">▶</button>
+      <button class="tb-btn" data-action="link"       title="Insert link">🔗</button>
+      <div class="sep"></div>
+      <button class="tb-btn wide" data-action="math-inline" title="Inline KaTeX" style="color:#00d8ff;">$x$</button>
+      <button class="tb-btn wide" data-action="math-block"  title="Block KaTeX"  style="color:#00d8ff;">$$</button>
+      <div class="editor-view-toggle">
+        <button class="view-btn active" data-view="split">Split</button>
+        <button class="view-btn"        data-view="editor">Raw</button>
+        <button class="view-btn"        data-view="preview">Visual</button>
+      </div>
+    </div>
+    <div class="editor-body">
+      <textarea id="md-input" spellcheck="false" placeholder="# INIT_SEQUENCE&#10;&#10;Enter markdown data..."></textarea>
+      <div id="md-preview"></div>
+    </div>
+  </div>
+
+  <!-- FILES TAB -->
+  <div class="tab-panel" id="tab-files">
+    <div class="paste-toolbar" style="padding:10px 0;">
+      <span class="paste-title" id="admin-files-title">GitHub Directory Protocol</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('')">CD /ROOT</button>
+    </div>
+    <div class="table-responsive" style="margin-top:0; border-top:none;">
+      <table class="gh-table" style="margin-top:0;">
+        <thead><tr><th>Target Name</th><th>Path Directive</th><th class="hide-mobile">Last Modified</th><th>Cmd</th></tr></thead>
+        <tbody id="admin-files-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     ABOUT OVERLAY
+════════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="about-overlay">
+  <div class="login-box" style="max-width:560px; width:100%;">
+    <h2 style="margin-bottom:18px;">// OPERATOR_PROFILE</h2>
+    <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
+      <!-- FOTO -->
+      <div style="flex-shrink:0; text-align:center;">
+        <div style="width:90px; height:90px; border:2px solid var(--accent); box-shadow:var(--glow); overflow:hidden; position:relative; background:#000;">
+          <img id="about-photo" src="GANTI_DENGAN_URL_FOTO_KAMU" alt="Operator"
+               style="width:100%; height:100%; object-fit:cover; filter:grayscale(30%);"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:var(--accent); font-size:28px; position:absolute; top:0; left:0;">👤</div>
+        </div>
+        <div style="font-size:9px; color:var(--text-3); margin-top:5px; letter-spacing:.1em;">CLASSIFIED</div>
+      </div>
+      <!-- INFO -->
+      <div style="flex:1; min-width:180px;">
+        <div class="agent-tagline" id="about-tagline" style="font-size:11px; color:var(--accent); min-height:18px; display:block; margin-bottom:12px;"></div>
+        <div style="font-size:12px; line-height:1.9; color:var(--text-2);">
+          <div><span style="color:var(--accent);">NAME</span> &nbsp;&nbsp;: <span style="color:var(--text);" id="about-name">0xrwise</span></div>
+          <div><span style="color:var(--accent);">ROLE</span> &nbsp;&nbsp;: <span style="color:var(--text);">Digital Student // Developer</span></div>
+          <div><span style="color:var(--accent);">STATUS</span> : <span style="color:#00ff41;">● ACTIVE</span></div>
+          <div><span style="color:var(--accent);">GITHUB</span> : <a href="https://github.com/0xrwise" target="_blank" style="color:var(--text); border-bottom:1px dashed var(--accent);">github.com/0xrwise</a></div>
+        </div>
+        <p style="font-size:11px; color:var(--text-3); margin-top:12px; border-top:1px dashed var(--border-lt); padding-top:10px;">
+          Platform produktivitas untuk mahasiswa digital. Tulis, enkripsi, dan publikasikan catatan langsung ke GitHub — tanpa server, tanpa database.
+        </p>
+      </div>
+    </div>
+    <div class="url-actions" style="margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     HONEYPOT TERMINAL OVERLAY (dipakai oleh honeypot.js & login trap)
+════════════════════════════════════════════════════════════════ -->
+<div id="hp-terminal-overlay">
+  <div id="hp-terminal-box">
+    <div id="hp-terminal-scanline"></div>
+    <div id="hp-terminal-titlebar">
+      <span>⚠ 0XRWISE // INTRUSION DETECTION SYSTEM v2.4</span>
+      <button onclick="document.getElementById('hp-terminal-overlay').classList.remove('active')">[ DISMISS ]</button>
+    </div>
+    <div id="hp-terminal-body">
+      <span class="hp-cursor" id="hp-cursor-main"></span>
+    </div>
+  </div>
+</div>
+
+<!-- HONEYPOT TRAP: hidden bait untuk scanner bot -->
+<a href="#" id="hp-trap-link" aria-hidden="true" tabindex="-1"
+   style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;"
+   data-hp="true"><!-- /wp-admin /admin /administrator /.env /config --></a>
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     MAIN SCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ─── UTILS ─── */
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show ' + (type || '');
+  clearTimeout(el._t); el._t = setTimeout(() => el.className = 'toast', 2600);
+}
+function utoa(str) { return btoa(unescape(encodeURIComponent(str))); }
+function atou(str) { return decodeURIComponent(escape(atob(str))); }
+
+/* ════════════════════════════════════════════════════════════════
+   ROUTING — History API + Android Back Button
+════════════════════════════════════════════════════════════════ */
+function handleRouting() {
+  const hash      = window.location.hash;
+  const params    = new URLSearchParams(location.search);
+  const fileParam = params.get('file');
+
+  // Tutup semua overlay
+  document.querySelectorAll('.overlay').forEach(el => el.classList.remove('active'));
+
+  // Direct file link: ?file=path#viewer
+  if (hash === '#viewer' && fileParam) {
+    document.getElementById('public-page').style.display  = 'none';
+    document.getElementById('admin-page').style.display   = 'none';
+    document.getElementById('viewer-page').style.display  = 'flex';
+    const savedPath    = sessionStorage.getItem('viewer_path');
+    const savedContent = sessionStorage.getItem('viewer_content');
+    if (savedPath && savedContent) _renderViewer(savedPath, savedContent);
+    return;
+  }
+
+  const MODAL_HASHES = ['#login', '#publish', '#decrypt', '#url-dialog', '#about'];
+  if (MODAL_HASHES.includes(hash)) {
+    const overlayId = hash === '#url-dialog' ? 'url-dialog'
+                    : hash === '#about'      ? 'about-overlay'
+                    : hash.substring(1) + '-overlay';
+    document.getElementById(overlayId).classList.add('active');
+    if (hash === '#about') startAboutTagline();
+  } else if (hash === '#viewer') {
+    document.getElementById('public-page').style.display  = 'none';
+    document.getElementById('admin-page').style.display   = 'none';
+    document.getElementById('viewer-page').style.display  = 'flex';
+    const savedPath    = sessionStorage.getItem('viewer_path');
+    const savedContent = sessionStorage.getItem('viewer_content');
+    if (savedPath && savedContent && !document.getElementById('viewer-content').innerHTML.trim()) {
+      _renderViewer(savedPath, savedContent);
+    }
+  } else if (hash === '#admin') {
+    if (!sessionStorage.getItem('GITHUB_PAT_TEMP')) { window.location.replace('#'); return; }
+    document.getElementById('public-page').style.display  = 'none';
+    document.getElementById('viewer-page').style.display  = 'none';
+    document.getElementById('admin-page').style.display   = 'flex';
+    if (document.getElementById('admin-files-body').innerHTML === '') loadGitHubFilesAdmin('');
+  } else {
+    if (fileParam) history.replaceState({}, '', location.pathname);
+    document.getElementById('admin-page').style.display   = 'none';
+    document.getElementById('viewer-page').style.display  = 'none';
+    document.getElementById('public-page').style.display  = 'flex';
+    if (document.getElementById('public-files-body').innerHTML.includes('Establishing')) loadPublicDirectory('');
+  }
+}
+
+window.addEventListener('hashchange', handleRouting);
+window.addEventListener('popstate',   handleRouting);
+
+/* ════════════════════════════════════════════════════════════════
+   GITHUB API HELPERS
+════════════════════════════════════════════════════════════════ */
+async function fetchCommitDate(path, cellId) {
+  try {
+    const headers = { 'Accept': 'application/vnd.github.v3+json' };
+    const token   = sessionStorage.getItem('GITHUB_PAT_TEMP');
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/commits?path=${path}&per_page=1`, { headers });
+    if (res.ok) {
+      const commits = await res.json();
+      if (commits.length > 0) {
+        const d = new Date(commits[0].commit.committer.date);
+        document.getElementById(cellId).textContent = d.toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      } else { document.getElementById(cellId).textContent = 'Unknown'; }
+    } else { document.getElementById(cellId).textContent = '-'; }
+  } catch { document.getElementById(cellId).textContent = 'Err'; }
+}
+
+async function githubRequest(path, method = 'GET', body = null) {
+  const token = sessionStorage.getItem('GITHUB_PAT_TEMP');
+  if (!token) throw new Error('Token lost');
+  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
+  const options = {
+    method,
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+  };
+  if (body) options.body = JSON.stringify(body);
+  const res = await fetch(url, options);
+  if (!res.ok && res.status !== 404) throw new Error(await res.text());
+  return res.status === 404 ? null : await res.json();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FILE VIEWER
+════════════════════════════════════════════════════════════════ */
+let pendingDecryptUrl  = '';
+let pendingDecryptPath = '';
+
+async function viewFile(path, url, isEncrypted) {
+  if (!url) return;
+  if (isEncrypted) {
+    pendingDecryptUrl  = url;
+    pendingDecryptPath = path;
+    document.getElementById('decrypt-pw').value        = '';
+    document.getElementById('decrypt-error').textContent = '';
+    window.location.hash = 'decrypt';
+  } else {
+    toast('Fetching datastream...', '');
+    try {
+      const res = await fetch(url + '?t=' + Date.now());
+      if (!res.ok) throw new Error();
+      const text = await res.text();
+      const looksMarkdown = path.endsWith('.md') || path.endsWith('.md.enc') ||
+        /^#{1,6}\s|^\*\*|^>\s|^-\s|\[.*\]\(|^```/m.test(text.substring(0, 500));
+      const effectivePath = (!path.endsWith('.md') && looksMarkdown) ? path + '.md' : path;
+      openViewer(effectivePath, text);
+    } catch { toast('Fetch Failed: Network Error.', 'error'); }
+  }
+}
+
+document.getElementById('decrypt-ok').addEventListener('click', async () => {
+  const pwHash = CryptoJS.SHA256(document.getElementById('decrypt-pw').value).toString();
+  document.getElementById('decrypt-error').textContent = 'Decrypting...';
+  try {
+    const res = await fetch(pendingDecryptUrl);
+    if (!res.ok) throw new Error();
+    const encText = await res.text();
+    const bytes   = CryptoJS.AES.decrypt(encText, pwHash);
+    const plain   = bytes.toString(CryptoJS.enc.Utf8);
+    if (!plain) throw new Error('Bad key');
+    window.history.back();
+    openViewer(pendingDecryptPath, plain);
+  } catch (e) {
+    document.getElementById('decrypt-error').textContent =
+      e.message === 'Bad key' ? 'ACCESS DENIED: WRONG KEY' : 'NETWORK ERROR';
+  }
+});
+
+function openViewer(path, content) {
+  sessionStorage.setItem('viewer_path',    path);
+  sessionStorage.setItem('viewer_content', content);
+
+  const shareUrl = `${location.origin}${location.pathname}?file=${encodeURIComponent(path)}`;
+  document.getElementById('viewer-share-url').value = shareUrl;
+  document.getElementById('viewer-share-bar').style.display = 'none';
+
+  const title = path.split('/').pop().replace(/\.md$/, '').replace(/-/g, ' ');
+  document.title = `${title} // 0xrwise`;
+  document.getElementById('og-title').setAttribute('content', `${title} // 0xrwise`);
+  document.getElementById('og-url').setAttribute('content', shareUrl);
+  document.getElementById('tw-title').setAttribute('content', `${title} // 0xrwise`);
+
+  const viewerUrl = `${location.origin}${location.pathname}?file=${encodeURIComponent(path)}#viewer`;
+  history.pushState({ file: path, page: 'viewer' }, '', viewerUrl);
+
+  document.getElementById('public-page').style.display = 'none';
+  document.getElementById('admin-page').style.display  = 'none';
+  document.getElementById('viewer-page').style.display = 'flex';
+  _renderViewer(path, content);
+}
+
+function _renderViewer(path, content) {
+  document.getElementById('viewer-title').textContent = path;
+  const vc = document.getElementById('viewer-content');
+  if (path.endsWith('.md') || path.endsWith('.md.enc')) {
+    vc.innerHTML = marked.parse(content);
+    renderMathInElement(vc, {
+      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
+      throwOnError: false,
+    });
+    vc.querySelectorAll('pre code:not(.hljs)').forEach(b => hljs.highlightElement(b));
+  } else {
+    const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    vc.innerHTML = `<pre><code>${escaped}</code></pre>`;
+    const cb = vc.querySelector('code');
+    if (cb) hljs.highlightElement(cb);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HONEYPOT — LOGIN BRUTE-FORCE SYSTEM
+   (IP geo-profiling + rich terminal display + Telegram via honeypot.js)
+════════════════════════════════════════════════════════════════ */
+
+/* ── IP & Geo Profiler ── */
+async function collectIPProfile() {
+  try {
+    const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    return {
+      ip: d.ip||'UNKNOWN', city: d.city||'???', region: d.region||'???',
+      country: d.country_name||'???', country_code: d.country_code||'--',
+      isp: d.org||'UNKNOWN ISP', asn: d.asn||'???', timezone: d.timezone||'???',
+      lat: d.latitude||0, lon: d.longitude||0, postal: d.postal||'???',
+    };
+  } catch {
+    try {
+      const r2 = await fetch('https://ipinfo.io/json', { cache: 'no-store' });
+      const d2 = await r2.json();
+      const [lat, lon] = (d2.loc || '0,0').split(',');
+      return { ip:d2.ip||'UNKNOWN', city:d2.city||'???', region:d2.region||'???', country:d2.country||'???', country_code:d2.country||'--', isp:d2.org||'UNKNOWN ISP', asn:'???', timezone:d2.timezone||'???', lat:parseFloat(lat), lon:parseFloat(lon), postal:d2.postal||'???' };
+    } catch {
+      return { ip:'FETCH_FAILED', city:'?', region:'?', country:'?', country_code:'?', isp:'?', asn:'?', timezone:'?', lat:0, lon:0, postal:'?' };
+    }
+  }
+}
+
+/* ── Device & Browser Profiler ── */
+async function collectDeviceProfile() {
+  const ua = navigator.userAgent;
+  let os = 'UNKNOWN_OS';
+  if (/Windows NT 10/.test(ua))         os = 'Windows 10/11';
+  else if (/Windows NT 6\.1/.test(ua))  os = 'Windows 7';
+  else if (/Windows/.test(ua))          os = 'Windows';
+  else if (/Android ([\d.]+)/.test(ua)) os = `Android ${ua.match(/Android ([\d.]+)/)[1]}`;
+  else if (/iPhone OS ([\d_]+)/.test(ua)) os = `iOS ${ua.match(/iPhone OS ([\d_]+)/)[1].replace(/_/g,'.')}`;
+  else if (/iPad/.test(ua))             os = 'iPadOS';
+  else if (/Mac OS X ([\d_]+)/.test(ua)) os = `macOS ${ua.match(/Mac OS X ([\d_]+)/)[1].replace(/_/g,'.')}`;
+  else if (/Linux/.test(ua))            os = 'Linux';
+  else if (/CrOS/.test(ua))             os = 'ChromeOS';
+
+  let browser = 'UNKNOWN_BROWSER';
+  if (/Edg\//.test(ua))          browser = `Edge ${(ua.match(/Edg\/([\d.]+)/)||['','?'])[1]}`;
+  else if (/OPR\//.test(ua))     browser = `Opera ${(ua.match(/OPR\/([\d.]+)/)||['','?'])[1]}`;
+  else if (/Brave/.test(ua))     browser = 'Brave';
+  else if (/Firefox\/([\d.]+)/.test(ua)) browser = `Firefox ${ua.match(/Firefox\/([\d.]+)/)[1]}`;
+  else if (/Chrome\/([\d.]+)/.test(ua))  browser = `Chrome ${ua.match(/Chrome\/([\d.]+)/)[1]}`;
+  else if (/Safari\/([\d.]+)/.test(ua) && /Version\//.test(ua)) browser = `Safari ${(ua.match(/Version\/([\d.]+)/)||['','?'])[1]}`;
+
+  const isMobile  = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+  const isTablet  = /iPad|Android(?!.*Mobile)/i.test(ua);
+  const deviceType = isTablet ? 'TABLET' : isMobile ? 'MOBILE' : 'DESKTOP';
+
+  let battery = null;
+  try {
+    if (navigator.getBattery) {
+      const b = await navigator.getBattery();
+      battery = { level: Math.round(b.level * 100), charging: b.charging };
+    }
+  } catch {}
+
+  const conn    = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const network = conn ? { type: conn.effectiveType||conn.type||'?', downlink: conn.downlink||'?', rtt: conn.rtt||'?' } : null;
+
+  let canvasHash = 'N/A';
+  try {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    ctx.textBaseline = 'top'; ctx.font = '14px monospace';
+    ctx.fillStyle = '#00ff41'; ctx.fillText('0xrwise_fp', 2, 2);
+    const data = c.toDataURL();
+    let h = 0;
+    for (let i = 0; i < Math.min(data.length, 500); i++) { h = ((h << 5) - h) + data.charCodeAt(i); h |= 0; }
+    canvasHash = Math.abs(h).toString(16).toUpperCase();
+  } catch {}
+
+  return {
+    os, browser, deviceType, battery, network,
+    cores: navigator.hardwareConcurrency || '?',
+    ram:   navigator.deviceMemory ? `${navigator.deviceMemory} GB` : '?',
+    touch: navigator.maxTouchPoints || 0,
+    lang:  navigator.language || '?',
+    langs: navigator.languages ? navigator.languages.join(', ') : (navigator.language || '?'),
+    dpr:   window.devicePixelRatio || 1,
+    screen_res:  `${screen.width}x${screen.height}`,
+    viewport:    `${window.innerWidth}x${window.innerHeight}`,
+    colorDepth:  `${screen.colorDepth}-bit`,
+    tz:          Intl.DateTimeFormat().resolvedOptions().timeZone,
+    tzOffset:    -(new Date().getTimezoneOffset()),
+    canvasHash,
+    ua,
+    referrer:    document.referrer || 'direct',
+    cookies:     navigator.cookieEnabled,
+    doNotTrack:  navigator.doNotTrack === '1',
+    plugins:     navigator.plugins ? navigator.plugins.length : 0,
+    onLine:      navigator.onLine,
+  };
+}
+
+/* ── Login Terminal Typewriter ── */
+function runLoginHoneypotTerminal(ipData, devData, meta) {
+  const overlay = document.getElementById('hp-terminal-overlay');
+  const body    = document.getElementById('hp-terminal-body');
+  overlay.classList.add('active');
+  body.innerHTML = '';
+
+  const battStr = devData.battery
+    ? `${devData.battery.level}% ${devData.battery.charging ? '[CHARGING ⚡]' : '[ON BATTERY]'}`
+    : 'API_BLOCKED';
+  const netStr  = devData.network
+    ? `${devData.network.type.toUpperCase()} | DL:${devData.network.downlink}Mbps | RTT:${devData.network.rtt}ms`
+    : 'CONNECTION_DATA_UNAVAILABLE';
+  const tzStr   = `${devData.tz} (UTC${devData.tzOffset >= 0 ? '+' : ''}${devData.tzOffset / 60})`;
+  const mapLink = `https://www.google.com/maps?q=${ipData.lat},${ipData.lon}`;
+
+  const SCRIPT = [
+    { text: '╔══════════════════════════════════════════════════╗', cls: 'red',    delay: 0   },
+    { text: '║  IDS ALERT — UNAUTHORIZED ACCESS ATTEMPT         ║', cls: 'red',    delay: 30  },
+    { text: '╚══════════════════════════════════════════════════╝', cls: 'red',    delay: 30  },
+    { text: '', delay: 80 },
+    { text: `> TIMESTAMP   : ${new Date().toISOString()}`,          cls: 'dim',    delay: 60  },
+    { text: `> TARGET      : 0xrwise_mainframe // panel login`,     cls: 'dim',    delay: 40  },
+    { text: `> TRIGGER     : FAILED AUTH x${meta.attempt}`,         cls: 'yellow', delay: 40  },
+    { text: '', delay: 80 },
+    { text: '[ PHASE 1 ] — NETWORK TRACE ─────────────────────',   cls: 'green',  delay: 80  },
+    { text: `  IP ADDRESS  : ${ipData.ip}`,                         cls: 'white',  delay: 50  },
+    { text: `  HOSTNAME    : ${ipData.isp}`,                        cls: 'white',  delay: 40  },
+    { text: `  ASN         : ${ipData.asn}`,                        cls: 'white',  delay: 40  },
+    { text: `  COUNTRY     : ${ipData.country} [${ipData.country_code}]`, cls: 'white', delay: 40 },
+    { text: `  REGION      : ${ipData.region}`,                     cls: 'white',  delay: 40  },
+    { text: `  CITY        : ${ipData.city} ${ipData.postal !== '???' ? '('+ipData.postal+')' : ''}`, cls: 'white', delay: 40 },
+    { text: `  COORDINATES : ${ipData.lat}, ${ipData.lon}`,         cls: 'cyan',   delay: 40  },
+    { text: `  MAP_LINK    : ${mapLink}`,                           cls: 'cyan',   delay: 40  },
+    { text: `  TIMEZONE    : ${ipData.timezone}`,                   cls: 'white',  delay: 40  },
+    { text: '', delay: 60 },
+    { text: '[ PHASE 2 ] — DEVICE PROFILING ─────────────────',    cls: 'green',  delay: 80  },
+    { text: `  DEVICE_TYPE : ${devData.deviceType}`,                cls: 'white',  delay: 40  },
+    { text: `  OS          : ${devData.os}`,                        cls: 'white',  delay: 40  },
+    { text: `  BROWSER     : ${devData.browser}`,                   cls: 'white',  delay: 40  },
+    { text: `  RESOLUTION  : ${devData.screen_res} (DPR: ${devData.dpr}x)`, cls: 'white', delay: 40 },
+    { text: `  VIEWPORT    : ${devData.viewport}`,                  cls: 'white',  delay: 40  },
+    { text: `  CPU_CORES   : ${devData.cores}`,                     cls: 'white',  delay: 40  },
+    { text: `  RAM         : ${devData.ram}`,                       cls: 'white',  delay: 40  },
+    { text: `  BATTERY     : ${battStr}`,                           cls: 'yellow', delay: 40  },
+    { text: `  NETWORK     : ${netStr}`,                            cls: 'white',  delay: 40  },
+    { text: '', delay: 60 },
+    { text: '[ PHASE 3 ] — BROWSER ENVIRONMENT ──────────────',    cls: 'green',  delay: 80  },
+    { text: `  LANGUAGE    : ${devData.lang}  |  ALL: ${devData.langs}`, cls: 'white', delay: 40 },
+    { text: `  LOCAL_TZ    : ${tzStr}`,                             cls: 'white',  delay: 40  },
+    { text: `  CANVAS_FP   : 0x${devData.canvasHash}`,             cls: 'cyan',   delay: 40  },
+    { text: `  COOKIES_ON  : ${devData.cookies ? 'YES' : 'NO'}`,   cls: 'white',  delay: 40  },
+    { text: `  DO_NOT_TRACK: ${devData.doNotTrack ? 'ENABLED' : 'DISABLED'}`, cls: 'white', delay: 40 },
+    { text: `  REFERRER    : ${devData.referrer}`,                  cls: 'white',  delay: 40  },
+    { text: '', delay: 60 },
+    { text: '[ PHASE 4 ] — CREDENTIALS ATTEMPTED ────────────',    cls: 'green',  delay: 80  },
+    { text: `  USERNAME    : "${meta.user || '(empty)'}"`,          cls: 'yellow', delay: 40  },
+    { text: `  PASSWORD_LEN: ${meta.passLen} chars`,                cls: 'yellow', delay: 40  },
+    { text: `  PAT_PREFIX  : ${meta.patHint || '(not provided)'}`,  cls: 'yellow', delay: 40  },
+    { text: '', delay: 60 },
+    { text: '[ STATUS ] ──────────────────────────────────────',    cls: 'green',  delay: 80  },
+    { text: `  INTRUSION   : LOGGED & FLAGGED`,                     cls: 'red',    delay: 40  },
+    { text: `  ALERT       : TELEGRAM NOTIFICATION SENT`,           cls: 'red',    delay: 40  },
+    { text: `  NEXT_ACTION : Monitoring active session...`,         cls: 'red',    delay: 40  },
+    { text: '', delay: 60 },
+    { text: '> All data transmitted to operator. Stand by.',        cls: 'red',    delay: 80  },
+    { text: '█ END OF REPORT ████████████████████████████████',     cls: 'red',    delay: 60  },
+  ];
+
+  let i = 0;
+  function typeNextLine() {
+    if (i >= SCRIPT.length) return;
+    const entry = SCRIPT[i++];
+    const span  = document.createElement('span');
+    span.className = `hp-line ${entry.cls || 'red'}`;
+    body.appendChild(span);
+    if (!entry.text) { body.scrollTop = body.scrollHeight; setTimeout(typeNextLine, entry.delay || 40); return; }
+    let ci = 0;
+    function typeChar() {
+      if (ci <= entry.text.length) {
+        span.textContent = entry.text.substring(0, ci++);
+        setTimeout(typeChar, 8);
+      } else { body.scrollTop = body.scrollHeight; setTimeout(typeNextLine, entry.delay || 40); }
+    }
+    typeChar();
+  }
+  setTimeout(typeNextLine, 300);
+}
+
+/* ── Login Honeypot Controller ── */
+const LOGIN_HP = (() => {
+  const KEY_LOCK    = 'hp_lockout';
+  const KEY_ATT     = 'hp_attempts';
+  const MAX_ATT     = (typeof CONFIG !== 'undefined' && CONFIG.HONEYPOT?.MAX_ATTEMPTS) || 5;
+  const LOCKOUT_MS  = ((typeof CONFIG !== 'undefined' && CONFIG.HONEYPOT?.LOCKOUT_MIN) || 30) * 60 * 1000;
+  const FAKE_DELAY  = 2200;
+
+  const getAtt  = ()  => parseInt(localStorage.getItem(KEY_ATT) || '0');
+  const setAtt  = n   => localStorage.setItem(KEY_ATT, String(n));
+  const getLock = ()  => parseInt(localStorage.getItem(KEY_LOCK) || '0');
+  const setLock = ()  => localStorage.setItem(KEY_LOCK, String(Date.now() + LOCKOUT_MS));
+  const clear   = ()  => { localStorage.removeItem(KEY_LOCK); localStorage.removeItem(KEY_ATT); };
+
+  function isLocked() {
+    const until = getLock();
+    if (!until) return false;
+    if (Date.now() > until) { clear(); return false; }
+    return true;
+  }
+  function remainingSeconds() { return Math.ceil((getLock() - Date.now()) / 1000); }
+
+  async function logIntrusion(user, pass, pat) {
+    const [ipData, devData] = await Promise.all([collectIPProfile(), collectDeviceProfile()]);
+    const meta = {
+      attempt : getAtt(),
+      user,
+      passLen : pass.length,
+      patHint : pat ? pat.substring(0, 6) + '...' : null,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Log ke localStorage
+    try {
+      const logs = JSON.parse(localStorage.getItem('hp_logs') || '[]');
+      logs.push({ type: 'login_fail', ipData, devData, meta });
+      if (logs.length > 20) logs.shift();
+      localStorage.setItem('hp_logs', JSON.stringify(logs));
+    } catch {}
+
+    // Tampilkan terminal
+    runLoginHoneypotTerminal(ipData, devData, meta);
+
+    // ── Kirim ke Telegram via honeypot.js module ──
+    // window.Honeypot sudah di-load dari assets/honeypot.js
+    if (window.Honeypot && typeof window.Honeypot._sendLoginAlert === 'function') {
+      window.Honeypot._sendLoginAlert({ ipData, devData, meta });
+    }
+  }
+
+  return { isLocked, remainingSeconds, setLock, getAtt, setAtt, MAX_ATT, FAKE_DELAY, logIntrusion, clear };
+})();
+
+/* ── Login Button Handler ── */
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const user     = document.getElementById('username-input').value.trim();
+  const pass     = document.getElementById('pw-input').value.trim();
+  const pat      = document.getElementById('pat-input').value.trim();
+  const remember = document.getElementById('remember-me').checked;
+  const errEl    = document.getElementById('login-error');
+  const loginBtn = document.getElementById('login-btn');
+
+  if (LOGIN_HP.isLocked()) {
+    errEl.textContent = `// ERR: Too many attempts. Locked for ${LOGIN_HP.remainingSeconds()}s.`;
+    return;
+  }
+
+  const hashInput = CryptoJS.SHA256(pass).toString();
+
+  if (user === CONFIG.PANEL_USERNAME && hashInput === CONFIG.PANEL_PASSWORD_HASH) {
+    // ✅ Login berhasil
+    LOGIN_HP.clear();
+    if (!pat.startsWith('ghp_')) { errEl.textContent = '// ERR: Invalid token format'; return; }
+    sessionStorage.setItem('GITHUB_PAT_TEMP', pat);
+    if (remember) { localStorage.setItem('GITHUB_PAT_SAVED', pat); }
+    else          { localStorage.removeItem('GITHUB_PAT_SAVED'); }
+    window.location.replace('#admin');
+  } else {
+    // ❌ Login salah — honeypot
+    const attempts  = LOGIN_HP.getAtt() + 1;
+    LOGIN_HP.setAtt(attempts);
+    const remaining = LOGIN_HP.MAX_ATT - attempts;
+
+    errEl.textContent = '// Verifying credentials...';
+    loginBtn.disabled = true;
+    await new Promise(r => setTimeout(r, LOGIN_HP.FAKE_DELAY));
+    loginBtn.disabled = false;
+
+    if (attempts >= LOGIN_HP.MAX_ATT) {
+      LOGIN_HP.setLock();
+      errEl.textContent = `// ERR: Account suspended. Try again in ${LOGIN_HP.remainingSeconds()}s`;
+    } else {
+      errEl.textContent = `// ERR: Access Denied (${remaining} attempt${remaining !== 1 ? 's' : ''} remaining)`;
+    }
+
+    // Profiling di background
+    LOGIN_HP.logIntrusion(user, pass, pat);
+  }
+});
+
+/* ── Logout ── */
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('GITHUB_PAT_SAVED');
+  sessionStorage.removeItem('GITHUB_PAT_TEMP');
+  window.location.replace('#');
+  toast('Connection Terminated. Credentials Wiped.');
+});
+
+/* ════════════════════════════════════════════════════════════════
+   ADMIN — TABS
+════════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.admin-tab[data-tab]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ════════════════════════════════════════════════════════════════
+   PUBLISH
+════════════════════════════════════════════════════════════════ */
+let currentPublishSource = '';
+document.getElementById('paste-publish-btn').addEventListener('click', () => { currentPublishSource = 'paste'; window.location.hash = 'publish'; });
+document.getElementById('blog-publish-btn').addEventListener('click', () => { currentPublishSource = 'blog';  window.location.hash = 'publish'; });
+
+document.getElementById('pub-ok').addEventListener('click', async () => {
+  let path      = document.getElementById('pub-filename').value.trim();
+  const isPriv  = document.getElementById('pub-private').checked;
+  let content   = currentPublishSource === 'paste'
+    ? document.getElementById('paste-area').value
+    : document.getElementById('md-input').value;
+  if (!path) return toast('Path required', 'error');
+  window.history.back();
+  toast('Transmitting...', '');
+  try {
+    if (isPriv) {
+      if (!path.endsWith('.enc')) path += '.enc';
+      content = CryptoJS.AES.encrypt(content, CONFIG.PANEL_PASSWORD_HASH).toString();
+    }
+    const existing = await githubRequest(path);
+    const body     = { message: `Push: ${path}`, content: utoa(content) };
+    if (existing && existing.sha) body.sha = existing.sha;
+    await githubRequest(path, 'PUT', body);
+    toast('Operation Successful', 'success');
+    loadGitHubFilesAdmin(path.substring(0, path.lastIndexOf('/')));
+  } catch { toast('Transmission Failed', 'error'); }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   FILE MANAGER (Admin)
+════════════════════════════════════════════════════════════════ */
+const PRIVATE_FILES = ['index.html', 'config.js', 'config.sample.js', '.gitignore', 'STRUCTURE.md'];
+
+async function loadGitHubFilesAdmin(path = '') {
+  const tbody = document.getElementById('admin-files-body');
+  document.getElementById('admin-files-title').textContent = path === '' ? 'ROOT /' : `DIR /${path}`;
+  tbody.innerHTML = '<tr><td colspan="4" style="color:var(--accent);">Scanning directory...</td></tr>';
+  try {
+    const data = await githubRequest(path);
+    if (!data) { tbody.innerHTML = '<tr><td colspan="4">Empty.</td></tr>'; return; }
+    tbody.innerHTML = '';
+    if (path !== '') {
+      const parentPath = path.substring(0, path.lastIndexOf('/'));
+      tbody.innerHTML  = `<tr><td><a onclick="loadGitHubFilesAdmin('${parentPath}')" style="color:var(--accent); font-weight:bold;">[ .. ] Return</a></td><td>DIR</td><td class="hide-mobile">-</td><td></td></tr>`;
+    }
+    let fc = 0;
+    data.forEach(item => {
+      fc++;
+      const cid = `admin-date-${fc}`;
+      const tr  = document.createElement('tr');
+      if (item.type === 'dir') {
+        tr.innerHTML = `<td><a onclick="loadGitHubFilesAdmin('${item.path}')">📁 ${item.name}</a></td><td style="color:var(--accent);">Directory</td><td id="${cid}" class="hide-mobile">Scanning...</td><td></td>`;
+      } else {
+        tr.innerHTML = `<td><a onclick="viewFile('${item.path}','${item.download_url}',${item.name.endsWith('.enc')})">📄 ${item.name}</a></td><td style="color:var(--text-3);">${item.path}</td><td id="${cid}" class="hide-mobile">Scanning...</td><td><button class="btn btn-danger btn-sm" onclick="deleteFile('${item.path}','${item.sha}')">DEL</button></td>`;
+      }
+      tbody.appendChild(tr);
+      fetchCommitDate(item.path, cid);
+    });
+  } catch { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger);">Scan failed.</td></tr>'; }
+}
+
+async function deleteFile(path, sha) {
+  if (!confirm(`Delete ${path}?`)) return;
+  toast('Executing delete...', '');
+  try {
+    await githubRequest(path, 'DELETE', { message: `Delete ${path}`, sha });
+    toast('File wiped.', 'success');
+    loadGitHubFilesAdmin(path.substring(0, path.lastIndexOf('/')));
+  } catch { toast('Delete failed.', 'error'); }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PUBLIC LISTING
+════════════════════════════════════════════════════════════════ */
+async function loadPublicDirectory(path = '') {
+  const tbody = document.getElementById('public-files-body');
+  document.getElementById('public-title').textContent = path === '' ? 'Index of /' : `Index of /${path}`;
+  try {
+    const res  = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    tbody.innerHTML = '';
+    if (path !== '') {
+      const parentPath = path.substring(0, path.lastIndexOf('/'));
+      tbody.innerHTML  = `<tr><td><a onclick="loadPublicDirectory('${parentPath}')" style="color:var(--accent); font-weight:bold;">[ .. ] /BACK</a></td><td>—</td><td class="hide-mobile">—</td><td>—</td></tr>`;
+    }
+    let fc = 0;
+    data.forEach(item => {
+      // Sembunyikan file infrastruktur dari tampilan publik
+      if (PRIVATE_FILES.includes(item.name)) return;
+      if (item.name === 'assets' && item.type === 'dir') return;
+      fc++;
+      const cid = `pub-date-${fc}`;
+      const tr  = document.createElement('tr');
+      if (item.type === 'dir') {
+        tr.innerHTML = `<td><a onclick="loadPublicDirectory('${item.path}')">📁 ${item.name}/</a></td><td>—</td><td id="${cid}" class="hide-mobile">Scanning...</td><td style="color:var(--accent);">Folder</td>`;
+      } else {
+        const isEnc = item.name.endsWith('.enc');
+        tr.innerHTML = `<td><a onclick="viewFile('${item.path}','${item.download_url}',${isEnc})">${isEnc ? '🔒' : '📄'} ${item.name}</a></td><td>${Math.ceil(item.size/1024)} KB</td><td id="${cid}" class="hide-mobile">Scanning...</td><td>${isEnc ? '<span style="color:var(--danger); font-weight:bold;">LOCKED</span>' : '<span style="color:var(--text-3);">Clear</span>'}</td>`;
+      }
+      tbody.appendChild(tr);
+      fetchCommitDate(item.path, cid);
+    });
+    if (fc === 0) tbody.innerHTML = '<tr><td colspan="4">No records found.</td></tr>';
+  } catch { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger);">Connection error.</td></tr>'; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MARKDOWN EDITOR
+════════════════════════════════════════════════════════════════ */
+marked.use(
+  markedHighlight.markedHighlight({
+    langPrefix: 'hljs language-',
+    highlight: (code, lang) => {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    },
+  })
+);
+
+const renderer = new marked.Renderer();
+renderer.link = function(token) {
+  const href = token.href || '', text = token.text || '';
+  if (text === 'youtube') {
+    const m = href.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_\-]{11})/);
+    if (m) return `<iframe width="100%" height="360" src="https://www.youtube.com/embed/${m[1]}" frameborder="0" allowfullscreen></iframe>`;
+  }
+  return `<a href="${href}" target="_blank">${text}</a>`;
+};
+marked.use({ renderer, breaks: true, gfm: true });
+
+const mdInput   = document.getElementById('md-input');
+const mdPreview = document.getElementById('md-preview');
+
+function updatePreview() {
+  mdPreview.innerHTML = marked.parse(mdInput.value || '');
+  renderMathInElement(mdPreview, {
+    delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
+    throwOnError: false,
+  });
+}
+mdInput.addEventListener('input', updatePreview);
+
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const v = btn.dataset.view;
+    if      (v === 'split')   { mdInput.className = ''; mdPreview.className = ''; }
+    else if (v === 'editor')  { mdInput.className = 'full'; mdPreview.className = 'hidden'; }
+    else                      { mdInput.className = 'hidden'; mdPreview.className = 'full'; updatePreview(); }
+  });
+});
+
+const ACTIONS = {
+  'bold':        { wrap: '**' },        'italic':       { wrap: '_' },
+  'strike':      { wrap: '~~' },        'code-inline':  { wrap: '`' },
+  'h2':          { prefix: '## ' },     'h3':           { prefix: '### ' },
+  'quote':       { prefix: '> ' },      'ul':           { prefix: '- ' },
+  'ol':          { prefix: '1. ' },     'hr':           { insert: '\n\n---\n\n' },
+  'code-block':  { insert: '\n\n```\ncode_here\n```\n\n' },
+  'math-inline': { wrap: '$' },         'math-block':   { insert: '\n\n$$\n\\text{formula}\n$$\n\n' },
+  'link':        { wrapBefore: '[', wrapAfter: '](url)' },
+};
+
+function insertAtCursor(before, after = '') {
+  const el = mdInput, s = el.selectionStart, e = el.selectionEnd;
+  const sel = el.value.substring(s, e);
+  el.value = el.value.substring(0, s) + before + sel + after + el.value.substring(e);
+  const pos = s + before.length + sel.length + after.length;
+  el.setSelectionRange(pos, pos); el.focus(); updatePreview();
+}
+function prependLine(prefix) {
+  const el = mdInput, s = el.selectionStart;
+  const lineStart = el.value.lastIndexOf('\n', s - 1) + 1;
+  el.value = el.value.substring(0, lineStart) + prefix + el.value.substring(lineStart);
+  el.setSelectionRange(lineStart + prefix.length + (s - lineStart), lineStart + prefix.length + (s - lineStart));
+  el.focus(); updatePreview();
+}
+
+let _urlMode = 'image';
+document.querySelectorAll('[data-action]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const action = btn.dataset.action;
+    if (['image', 'video', 'link'].includes(action)) {
+      _urlMode = action;
+      document.getElementById('url-dialog-title').textContent = `INJECT ${action.toUpperCase()} URL`;
+      document.getElementById('url-dialog-input').value = '';
+      window.location.hash = 'url-dialog';
+      return;
+    }
+    const cfg = ACTIONS[action];
+    if (!cfg) return;
+    if (cfg.insert)     insertAtCursor(cfg.insert);
+    else if (cfg.prefix)     prependLine(cfg.prefix);
+    else if (cfg.wrapBefore) insertAtCursor(cfg.wrapBefore, cfg.wrapAfter);
+    else if (cfg.wrap)       insertAtCursor(cfg.wrap, cfg.wrap);
+  });
+});
+
+document.getElementById('url-dialog-ok').addEventListener('click', () => {
+  const url = document.getElementById('url-dialog-input').value.trim();
+  if (!url) return toast('Input required.', 'error');
+  window.history.back();
+  if      (_urlMode === 'image') insertAtCursor(`\n\n![image](${url})\n\n`);
+  else if (_urlMode === 'video') insertAtCursor(`\n\n[youtube](${url})\n\n`);
+  else if (_urlMode === 'link')  insertAtCursor('[', `](${url})`);
+});
+
+/* ════════════════════════════════════════════════════════════════
+   VIEWER CONTROLS — Share & Copy
+════════════════════════════════════════════════════════════════ */
+document.getElementById('viewer-share-btn').addEventListener('click', () => {
+  const bar = document.getElementById('viewer-share-bar');
+  bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+  if (bar.style.display === 'flex') document.getElementById('viewer-share-url').select();
+});
+document.getElementById('viewer-share-copy-btn').addEventListener('click', () => {
+  const url = document.getElementById('viewer-share-url').value;
+  navigator.clipboard.writeText(url)
+    .then(() => toast('Share URL copied!', ''))
+    .catch(() => { document.getElementById('viewer-share-url').select(); document.execCommand('copy'); toast('URL copied!', ''); });
+});
+document.getElementById('viewer-copy-btn').addEventListener('click', () => {
+  const raw = sessionStorage.getItem('viewer_content') || '';
+  if (!raw) return toast('Nothing to copy.', 'error');
+  navigator.clipboard.writeText(raw).then(() => toast('Content copied to clipboard.', '')).catch(() => toast('Copy failed.', 'error'));
+});
+
+/* ════════════════════════════════════════════════════════════════
+   DRAFT AUTOSAVE
+════════════════════════════════════════════════════════════════ */
+const pasteArea      = document.getElementById('paste-area');
+const mdInputEl      = document.getElementById('md-input');
+const pasteSaveStatus = document.getElementById('paste-save-status');
+
+const savedPaste  = localStorage.getItem('draft_notepad');
+const savedEditor = localStorage.getItem('draft_editor');
+if (savedPaste)  pasteArea.value   = savedPaste;
+if (savedEditor) { mdInputEl.value = savedEditor; updatePreview(); }
+
+let pasteTimer, editorTimer;
+pasteArea.addEventListener('input', () => {
+  clearTimeout(pasteTimer);
+  pasteTimer = setTimeout(() => {
+    localStorage.setItem('draft_notepad', pasteArea.value);
+    pasteSaveStatus.textContent = '// Draft saved — ' + new Date().toLocaleTimeString('id-ID');
+  }, 800);
+});
+mdInputEl.addEventListener('input', () => {
+  clearTimeout(editorTimer);
+  editorTimer = setTimeout(() => localStorage.setItem('draft_editor', mdInputEl.value), 800);
+});
+document.getElementById('paste-clear-btn').addEventListener('click', () => {
+  if (confirm('Wipe data?')) {
+    pasteArea.value = ''; localStorage.removeItem('draft_notepad'); pasteSaveStatus.textContent = '// Buffer wiped.';
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   SEARCH
+════════════════════════════════════════════════════════════════ */
+document.getElementById('nav-search-btn').addEventListener('click', () => {
+  const sb = document.getElementById('search-bar');
+  sb.style.display = sb.style.display === 'none' ? 'block' : 'none';
+  if (sb.style.display === 'block') document.getElementById('search-input').focus();
+});
+document.getElementById('search-close-btn').addEventListener('click', () => {
+  document.getElementById('search-bar').style.display = 'none';
+  document.getElementById('search-input').value   = '';
+  document.getElementById('search-results').innerHTML = '';
+});
+document.getElementById('search-input').addEventListener('input', async function () {
+  const q       = this.value.trim().toLowerCase();
+  const results = document.getElementById('search-results');
+  if (!q) { results.innerHTML = ''; return; }
+  results.innerHTML = '<span style="color:var(--text-3);">Scanning repository...</span>';
+  try {
+    const res  = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/git/trees/HEAD?recursive=1`);
+    const data = await res.json();
+    const hits = (data.tree || []).filter(f =>
+      f.type === 'blob' &&
+      f.path.toLowerCase().includes(q) &&
+      !PRIVATE_FILES.includes(f.path.split('/').pop()) &&
+      !f.path.startsWith('assets/')
+    );
+    if (!hits.length) { results.innerHTML = '<span style="color:var(--text-3);">No match found.</span>'; return; }
+    results.innerHTML = hits.slice(0, 12).map(f => `
+      <div style="padding:5px 0; border-bottom:1px dashed var(--border); cursor:pointer; color:var(--accent);"
+           onclick="document.getElementById('search-bar').style.display='none'; viewFile('${f.path}', 'https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/HEAD/${f.path}', ${f.path.endsWith('.enc')})">
+        <span style="color:var(--text-3);">&gt; </span>${f.path}
+      </div>`).join('');
+  } catch { results.innerHTML = '<span style="color:var(--danger);">Search error.</span>'; }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   ADMIN LOGIN TRIGGER
+   — Klik logo 5x, atau Ctrl+Shift+X
+════════════════════════════════════════════════════════════════ */
+let clickCount = 0, resetTimeout = null;
+const logo = document.getElementById('ascii-logo');
+logo.addEventListener('click', () => {
+  clearTimeout(resetTimeout);
+  clickCount++;
+  document.getElementById('click-dots-wrap').style.display = 'inline-flex';
+  [1,2,3,4,5].forEach(i => document.getElementById('d'+i).classList.toggle('filled', i <= clickCount));
+  logo.classList.add('clicking');
+  if (clickCount >= 5) { clickCount = 0; window.location.hash = 'login'; }
+  resetTimeout = setTimeout(() => {
+    clickCount = 0; logo.classList.remove('clicking');
+    document.getElementById('click-dots-wrap').style.display = 'none';
+  }, 3000);
+});
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'X') { e.preventDefault(); window.location.hash = 'login'; }
+});
+
+/* ════════════════════════════════════════════════════════════════
+   ABOUT PAGE TAGLINE TYPEWRITER
+════════════════════════════════════════════════════════════════ */
+let _aboutTaglineStarted = false;
+function startAboutTagline() {
+  const el = document.getElementById('about-tagline');
+  if (!el || _aboutTaglineStarted) return;
+  _aboutTaglineStarted = true;
+  const lines = [
+    '> Operator status: ONLINE',
+    '> Clearance: OMEGA-7',
+    '> Encryption: AES-256 ACTIVE',
+    '> Mission: Knowledge is power.',
+  ];
+  let li = 0, ci = 0, del = false;
+  function tick() {
+    const line = lines[li];
+    if (!del) {
+      ci++; el.innerHTML = line.substring(0, ci) + '<span class="cursor"></span>';
+      if (ci === line.length) { del = true; setTimeout(tick, 2200); return; }
+    } else {
+      ci--; el.innerHTML = line.substring(0, ci) + '<span class="cursor"></span>';
+      if (ci === 0) { del = false; li = (li + 1) % lines.length; setTimeout(tick, 350); return; }
+    }
+    setTimeout(tick, del ? 20 : 45);
+  }
+  tick();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HOMEPAGE TAGLINE TYPEWRITER
+════════════════════════════════════════════════════════════════ */
+(function () {
+  const lines = [
+    '> Initializing secure channel... [ OK ]',
+    '> Identity: CLASSIFIED // Clearance: OMEGA',
+    '> Mission: Knowledge is the sharpest weapon.',
+    '> Status: ACTIVE | Location: ENCRYPTED',
+    '> "The quieter you become, the more you can hear."',
+    '> Uplink established. Welcome, Operator.',
+    '> All transmissions are end-to-end encrypted.',
+    '> Threat level: MINIMAL | Proceed with caution.',
+  ];
+  let lineIdx = 0, charIdx = 0, deleting = false;
+  const el = document.getElementById('agent-tagline');
+  if (!el) return;
+  el.innerHTML = '<span class="cursor"></span>';
+  function type() {
+    const line = lines[lineIdx];
+    if (!deleting) {
+      charIdx++;
+      el.innerHTML = line.substring(0, charIdx) + '<span class="cursor"></span>';
+      if (charIdx === line.length) { deleting = true; setTimeout(type, 2800); return; }
+    } else {
+      charIdx--;
+      el.innerHTML = line.substring(0, charIdx) + '<span class="cursor"></span>';
+      if (charIdx === 0) { deleting = false; lineIdx = (lineIdx + 1) % lines.length; setTimeout(type, 400); return; }
+    }
+    setTimeout(type, deleting ? 22 : 48);
+  }
+  setTimeout(type, 800);
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   INIT — DOMContentLoaded
+════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const params    = new URLSearchParams(location.search);
+  const fileParam = params.get('file');
+  if (fileParam) {
+    const rawUrl = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/HEAD/${fileParam}`;
+    viewFile(fileParam, rawUrl, fileParam.endsWith('.enc'));
+    return;
+  }
+  const savedToken = localStorage.getItem('GITHUB_PAT_SAVED');
+  if (savedToken) {
+    sessionStorage.setItem('GITHUB_PAT_TEMP', savedToken);
+    window.location.hash = 'admin';
+  } else {
+    handleRouting();
+  }
+});
+
+</script>
+</body>
+</html>
