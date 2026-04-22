@@ -638,7 +638,7 @@ Enter markdown data..."></textarea>
           <div><span style="color:var(--accent);">GITHUB</span> : <a href="https://github.com/0xrwise" target="_blank" style="color:var(--text); border-bottom:1px dashed var(--accent);">github.com/0xrwise</a></div>
         </div>
         <p style="font-size:11px; color:var(--text-3); margin-top:12px; border-top:1px dashed var(--border-lt); padding-top:10px;">
-         Routing packets, encrypting thoughts, compiling the future."
+         "Routing packets, encrypting thoughts, compiling the future."
         </p>
       </div>
     </div>
@@ -684,11 +684,17 @@ Enter markdown data..."></textarea>
 /* ─── UTILS ─── */
 function toast(msg, type) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.className = 'toast show ' + (type || '');
+  el.textContent = msg; el.className = ('toast show ' + (type || '')).trim();
   clearTimeout(el._t); el._t = setTimeout(() => el.className = 'toast', 2600);
 }
-function utoa(str) { return btoa(unescape(encodeURIComponent(str))); }
-function atou(str) { return decodeURIComponent(escape(atob(str))); }
+function utoa(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+    (_, p1) => String.fromCharCode(parseInt(p1, 16))));
+}
+function atou(str) {
+  return decodeURIComponent(atob(str).split('').map(
+    c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
 
 /* ════════════════════════════════════════════════════════════════
    ROUTING — History API + Android Back Button
@@ -761,30 +767,31 @@ async function fetchCommitDate(path, cellId) {
     document.getElementById(cellId).textContent = cached;
     return;
   }
+  const setCell = (txt) => { const c = document.getElementById(cellId); if (c) c.textContent = txt; };
   try {
     const headers = { 'Accept': 'application/vnd.github.v3+json' };
     const token   = sessionStorage.getItem('GITHUB_PAT_TEMP');
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/commits?path=${path}&per_page=1`, { headers });
+    const res = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/commits?path=${encodeURIComponent(path)}&per_page=1`, { headers });
     if (res.ok) {
       const commits = await res.json();
       if (commits.length > 0) {
         const d = new Date(commits[0].commit.committer.date);
         const formatted = d.toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-        sessionStorage.setItem(cacheKey, formatted); // Simpan ke cache
-        document.getElementById(cellId).textContent = formatted;
+        sessionStorage.setItem(cacheKey, formatted);
+        setCell(formatted);
       } else {
         sessionStorage.setItem(cacheKey, 'Unknown');
-        document.getElementById(cellId).textContent = 'Unknown';
+        setCell('Unknown');
       }
-    } else { document.getElementById(cellId).textContent = '-'; }
-  } catch { document.getElementById(cellId).textContent = 'Err'; }
+    } else { setCell('-'); }
+  } catch { setCell('Err'); }
 }
 
 async function githubRequest(path, method = 'GET', body = null) {
   const token = sessionStorage.getItem('GITHUB_PAT_TEMP');
   if (!token) throw new Error('Token hilang — silakan login ulang');
-  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
+  const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${encodeURIComponent(path)}`;
   const options = {
     method,
     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
@@ -906,31 +913,26 @@ function _renderViewer(path, content) {
    (IP geo-profiling + rich terminal display + Telegram via honeypot.js)
 ════════════════════════════════════════════════════════════════ */
 
-/* ── IP & Geo Profiler (VPN & AdBlock Friendly) ── */
+/* ── IP & Geo Profiler ── */
 async function collectIPProfile() {
   try {
-    const r = await fetch('[https://ipwho.is/](https://ipwho.is/)', { cache: 'no-store' });
+    const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    if (!r.ok) throw new Error();
     const d = await r.json();
-    if (!d.success) throw new Error();
     return {
-      ip: d.ip || 'UNKNOWN', city: d.city || '???', region: d.region || '???',
-      country: d.country || '???', country_code: d.country_code || '--',
-      isp: d.connection.isp || 'UNKNOWN ISP', asn: d.connection.asn || '???', timezone: d.timezone.id || '???',
-      lat: d.latitude || 0, lon: d.longitude || 0, postal: d.postal || '???'
+      ip: d.ip||'UNKNOWN', city: d.city||'???', region: d.region||'???',
+      country: d.country_name||'???', country_code: d.country_code||'--',
+      isp: d.org||'UNKNOWN ISP', asn: d.asn||'???', timezone: d.timezone||'???',
+      lat: d.latitude||0, lon: d.longitude||0, postal: d.postal||'???',
     };
   } catch {
     try {
-      const r2 = await fetch('[http://ip-api.com/json/](http://ip-api.com/json/)', { cache: 'no-store' });
+      const r2 = await fetch('https://ipinfo.io/json', { cache: 'no-store' });
       const d2 = await r2.json();
-      if (d2.status !== 'success') throw new Error();
-      return {
-        ip: d2.query || 'UNKNOWN', city: d2.city || '???', region: d2.regionName || '???',
-        country: d2.country || '???', country_code: d2.countryCode || '--',
-        isp: d2.isp || 'UNKNOWN ISP', asn: d2.as || '???', timezone: d2.timezone || '???',
-        lat: d2.lat || 0, lon: d2.lon || 0, postal: d2.zip || '???'
-      };
+      const [lat, lon] = (d2.loc || '0,0').split(',');
+      return { ip:d2.ip||'UNKNOWN', city:d2.city||'???', region:d2.region||'???', country:d2.country||'???', country_code:d2.country||'--', isp:d2.org||'UNKNOWN ISP', asn:'???', timezone:d2.timezone||'???', lat:parseFloat(lat), lon:parseFloat(lon), postal:d2.postal||'???' };
     } catch {
-      return { ip:'NETWORK_BLOCKED', city:'HIDDEN', region:'HIDDEN', country:'HIDDEN', country_code:'--', isp:'VPN / ADBLOCK', asn:'???', timezone:'???', lat:0, lon:0, postal:'???' };
+      return { ip:'FETCH_FAILED', city:'?', region:'?', country:'?', country_code:'?', isp:'?', asn:'?', timezone:'?', lat:0, lon:0, postal:'?' };
     }
   }
 }
@@ -1022,10 +1024,8 @@ function runLoginHoneypotTerminal(ipData, devData, meta) {
     : 'CONNECTION_DATA_UNAVAILABLE';
   const tzStr   = `${devData.tz} (UTC${devData.tzOffset >= 0 ? '+' : ''}${devData.tzOffset / 60})`;
   
-  // FIX: URL Maps standar yang valid. Beri label BLOCKED jika data gagal diambil.
-  const mapLink = (ipData.lat !== 0 && ipData.lon !== 0) 
-    ? `http://googleusercontent.com/maps.google.com/${ipData.lat},${ipData.lon}` 
-    : 'LOCATION_RESTRICTED_BY_NETWORK';
+  // FIX: Perbaiki URL Maps ke standar [https://maps.google.com](https://maps.google.com)
+  const mapLink = `https://maps.google.com/?q=${ipData.lat},${ipData.lon}`;
 
   const SCRIPT = [
     { text: '╔══════════════════════════════════════════════════╗', cls: 'red',    delay: 0   },
@@ -1152,6 +1152,26 @@ const LOGIN_HP = (() => {
 
   return { isLocked, remainingSeconds, setLock, getAtt, setAtt, MAX_ATT, FAKE_DELAY, logIntrusion, clear };
 })();
+
+/* ── Enter Key Support — Login Form ── */
+['username-input', 'pw-input', 'pat-input'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+});
+
+/* ── Enter Key Support — Decrypt Form ── */
+const dpw = document.getElementById('decrypt-pw');
+if (dpw) dpw.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('decrypt-ok').click();
+});
+
+/* ── Enter Key Support — URL Dialog ── */
+const udi = document.getElementById('url-dialog-input');
+if (udi) udi.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('url-dialog-ok').click();
+});
 
 /* ── Login Button Handler ── */
 document.getElementById('login-btn').addEventListener('click', async () => {
@@ -1294,7 +1314,18 @@ async function loadGitHubFilesAdmin(path = '') {
     tbody.innerHTML = '';
     if (path !== '') {
       const parentPath = path.substring(0, path.lastIndexOf('/'));
-      tbody.innerHTML  = `<tr><td><a onclick="loadGitHubFilesAdmin('${parentPath}')" style="color:var(--accent); font-weight:bold;">[ .. ] Return</a></td><td>DIR</td><td class="hide-mobile">-</td><td></td></tr>`;
+      // FIX XSS: DOM API + addEventListener, bukan innerHTML + inline onclick
+      const _retTr = document.createElement('tr');
+      const _retA  = document.createElement('a');
+      _retA.style.cssText = 'color:var(--accent); font-weight:bold; cursor:pointer;';
+      _retA.textContent = '[ .. ] Return';
+      _retA.addEventListener('click', () => loadGitHubFilesAdmin(parentPath));
+      const _retTd1 = document.createElement('td'); _retTd1.appendChild(_retA);
+      const _retTd2 = document.createElement('td'); _retTd2.textContent = 'DIR';
+      const _retTd3 = document.createElement('td'); _retTd3.className = 'hide-mobile'; _retTd3.textContent = '-';
+      const _retTd4 = document.createElement('td');
+      _retTr.append(_retTd1, _retTd2, _retTd3, _retTd4);
+      tbody.appendChild(_retTr);
     }
     // Map untuk simpan data file admin — hindari URL di inline onclick
     const _adminFileMap = {};
@@ -1532,7 +1563,7 @@ async function loadPublicDirectory(path = '') {
 
   tbody.innerHTML = '<tr><td colspan="4" style="color:var(--accent);">Establishing secure connection to GitHub Server...</td></tr>';
   try {
-    const res  = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`);
+    const res  = await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${encodeURIComponent(path)}`);
     if (!res.ok) {
       // Rate limit check
       if (res.status === 403) {
@@ -1794,14 +1825,26 @@ document.getElementById('search-input').addEventListener('input', async function
       !f.path.startsWith('assets/')
     );
     if (!hits.length) { results.innerHTML = '<span style="color:var(--text-3);">No match found.</span>'; return; }
-    results.innerHTML = hits.slice(0, 12).map(f => {
-      const rawUrl = '[https://raw.githubusercontent.com/](https://raw.githubusercontent.com/)' + CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/HEAD/' + f.path;
+    // FIX XSS: DOM API + addEventListener | FIX URL: hapus markdown link syntax
+    results.innerHTML = '';
+    hits.slice(0, 12).forEach(f => {
+      const rawUrl = 'https://raw.githubusercontent.com/' + CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/HEAD/' + f.path;
       const isEnc  = f.path.endsWith('.enc');
-      return `<div style="padding:5px 0; border-bottom:1px dashed var(--border); cursor:pointer; color:var(--accent);"
-           onclick="document.getElementById('search-bar').style.display='none'; viewFile('${f.path}', '${rawUrl}', ${isEnc})">
-        <span style="color:var(--text-3);">> </span>${f.path}
-      </div>`;
-    }).join('');
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:5px 0; border-bottom:1px dashed var(--border); cursor:pointer; color:var(--accent);';
+      const prefix = document.createElement('span');
+      prefix.style.color = 'var(--text-3)';
+      prefix.textContent = '> ';
+      const label = document.createElement('span');
+      label.textContent = f.path;
+      div.appendChild(prefix);
+      div.appendChild(label);
+      div.addEventListener('click', () => {
+        document.getElementById('search-bar').style.display = 'none';
+        viewFile(f.path, rawUrl, isEnc);
+      });
+      results.appendChild(div);
+    });
   } catch { results.innerHTML = '<span style="color:var(--danger);">Search error.</span>'; }
 });
 
