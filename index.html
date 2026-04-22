@@ -817,7 +817,7 @@ function _renderViewer(path, content) {
 /* ── IP & Geo Profiler ── */
 async function collectIPProfile() {
   try {
-    const r = await fetch('[https://ipapi.co/json/](https://ipapi.co/json/)', { cache: 'no-store' });
+    const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
     if (!r.ok) throw new Error();
     const d = await r.json();
     return {
@@ -828,7 +828,7 @@ async function collectIPProfile() {
     };
   } catch {
     try {
-      const r2 = await fetch('[https://ipinfo.io/json](https://ipinfo.io/json)', { cache: 'no-store' });
+      const r2 = await fetch('https://ipinfo.io/json', { cache: 'no-store' });
       const d2 = await r2.json();
       const [lat, lon] = (d2.loc || '0,0').split(',');
       return { ip:d2.ip||'UNKNOWN', city:d2.city||'???', region:d2.region||'???', country:d2.country||'???', country_code:d2.country||'--', isp:d2.org||'UNKNOWN ISP', asn:'???', timezone:d2.timezone||'???', lat:parseFloat(lat), lon:parseFloat(lon), postal:d2.postal||'???' };
@@ -1619,11 +1619,14 @@ document.getElementById('search-input').addEventListener('input', async function
       !f.path.startsWith('assets/')
     );
     if (!hits.length) { results.innerHTML = '<span style="color:var(--text-3);">No match found.</span>'; return; }
-    results.innerHTML = hits.slice(0, 12).map(f => `
-      <div style="padding:5px 0; border-bottom:1px dashed var(--border); cursor:pointer; color:var(--accent);"
-           onclick="document.getElementById('search-bar').style.display='none'; viewFile('${f.path}', '[https://raw.githubusercontent.com/$](https://raw.githubusercontent.com/$){CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/HEAD/${f.path}', ${f.path.endsWith('.enc')})">
+    results.innerHTML = hits.slice(0, 12).map(f => {
+      const rawUrl = 'https://raw.githubusercontent.com/' + CONFIG.GITHUB_USER + '/' + CONFIG.GITHUB_REPO + '/HEAD/' + f.path;
+      const isEnc  = f.path.endsWith('.enc');
+      return `<div style="padding:5px 0; border-bottom:1px dashed var(--border); cursor:pointer; color:var(--accent);"
+           onclick="document.getElementById('search-bar').style.display='none'; viewFile('${f.path}', '${rawUrl}', ${isEnc})">
         <span style="color:var(--text-3);">> </span>${f.path}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch { results.innerHTML = '<span style="color:var(--danger);">Search error.</span>'; }
 });
 
