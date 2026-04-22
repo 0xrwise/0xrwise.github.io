@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════
-//  0XRWISE HONEYPOT MODULE v2.0
+//  0XRWISE HONEYPOT MODULE v2.1
 //  File: assets/honeypot.js
 //  Diload setelah config.js di index.html
 //
@@ -11,6 +11,10 @@
 //  [5] IP + Browser Fingerprint— kumpulkan data intruder
 //  [6] Fake Terminal Overlay   — psikologis deterrent
 //  [7] localStorage Log        — log lokal, bisa dibaca owner
+//
+//  BUGFIX v2.1:
+//  - [BUG#1] Telegram: ENABLED default false di config → sekarang override jika BOT_TOKEN & CHAT_ID terisi
+//  - [BUG#6] Console probe tidak muncul berulang saat refresh — cukup 1x per sesi
 // ════════════════════════════════════════════════════════════════
 
 (function () {
@@ -21,15 +25,22 @@
   const TG     = CFG.TELEGRAM  || {};
   const HP_CFG = CFG.HONEYPOT  || {};
 
-  const TG_ENABLED    = TG.ENABLED    === true;
-  const TG_TOKEN      = TG.BOT_TOKEN  || '';
-  const TG_CHAT       = TG.CHAT_ID    || '';
+  const TG_TOKEN = TG.BOT_TOKEN || '';
+  const TG_CHAT  = TG.CHAT_ID   || '';
+
+  // BUG FIX #1: Jika ENABLED=false tapi token & chat_id sudah terisi, anggap enabled otomatis
+  // Ini mencegah bug di mana user lupa ganti ENABLED ke true
+  const TG_ENABLED = TG.ENABLED === true || (TG_TOKEN.length > 10 && TG_CHAT.length > 3);
 
   const SHOW_TERMINAL = HP_CFG.SHOW_TERMINAL !== false;   // default: true
   const URL_TRAP      = HP_CFG.URL_TRAP      !== false;
   const CONSOLE_TRAP  = HP_CFG.CONSOLE_TRAP  !== false;
   const MAX_ATTEMPTS  = HP_CFG.MAX_ATTEMPTS  || 5;
   const LOCKOUT_MIN   = HP_CFG.LOCKOUT_MIN   || 30;
+
+  // BUG FIX #6: Session key untuk mencegah notifikasi muncul berulang saat refresh
+  const SESSION_CONSOLE_KEY = 'hp_console_triggered';
+  const SESSION_URL_KEY     = 'hp_url_triggered';
 
   // ════════════════════════════════════════════════════════════════
   //  [A] POLA URL/HASH MENCURIGAKAN
@@ -63,13 +74,18 @@
     remove: (...keys)     => { keys.forEach(k => { try { localStorage.removeItem(k); } catch {} }); },
   };
 
+  // Menggunakan sessionStorage untuk cek per sesi (reset saat tab/browser ditutup)
+  const SS = {
+    get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { sessionStorage.setItem(k, String(v)); } catch {} },
+  };
+
   // ════════════════════════════════════════════════════════════════
   //  [C] KUMPULKAN DATA INTRUDER (tanpa camera — browser block)
   // ════════════════════════════════════════════════════════════════
   let _ipCache = null;
 
   async function getIntruderData(extras = {}) {
-    // Ambil IP publik (async, jika gagal pakai 'unknown')
     if (!_ipCache) {
       try {
         const r = await Promise.race([
@@ -99,7 +115,11 @@
   //  [D] TELEGRAM ALERT
   // ════════════════════════════════════════════════════════════════
   async function sendTelegram(type, data) {
-    if (!TG_ENABLED || !TG_TOKEN || !TG_CHAT) return;
+    // BUG FIX #1: Cek ulang token & chat sebelum kirim
+    if (!TG_ENABLED || !TG_TOKEN || !TG_CHAT) {
+      console.warn('[HP] Telegram tidak terkirim: token/chat_id kosong atau ENABLED=false');
+      return;
+    }
 
     const emoji = {
       url_probe    : '🕵️',
@@ -123,7 +143,7 @@
     ].filter(Boolean).join('\n');
 
     try {
-      await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({
@@ -132,6 +152,11 @@
           parse_mode: 'Markdown',
         }),
       });
+      // BUG FIX #1: Log error response untuk debugging
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.warn('[HP] Telegram error:', errBody.description || res.status);
+      }
     } catch (e) {
       // Diam saja agar honeypot tidak terekspos ke peretas
     }
@@ -159,15 +184,12 @@
     const ip   = _ipCache || '...';
     const now  = new Date().toISOString();
 
+    // BUG FIX #2: ASCII diganti dengan teks yang mobile-friendly (tidak menggunakan box drawing lebar)
     const script = [
-      { cls: 'dim',    txt: '──────────────────────────────────────────' },
-      { cls: 'red',    txt: '  ██╗  ██╗ ██████╗ ███╗  ██╗███████╗██╗   ██╗ ██████╗ ████████╗' },
-      { cls: 'red',    txt: '  ██║  ██║██╔═══██╗████╗ ██║██╔════╝╚██╗ ██╔╝██╔═══██╗╚══██╔══╝' },
-      { cls: 'red',    txt: '  ███████║██║   ██║██╔██╗██║█████╗   ╚████╔╝ ██║   ██║   ██║   ' },
-      { cls: 'red',    txt: '  ██╔══██║██║   ██║██║╚████║██╔══╝    ╚██╔╝  ██║   ██║   ██║   ' },
-      { cls: 'red',    txt: '  ██║  ██║╚██████╔╝██║ ╚███║███████╗   ██║   ╚██████╔╝   ██║   ' },
-      { cls: 'red',    txt: '  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚══╝╚══════╝   ╚═╝    ╚═════╝    ╚═╝   ' },
-      { cls: 'dim',    txt: '──────────────────────────────────────────' },
+      { cls: 'dim',    txt: '──────────────────────────────────────' },
+      { cls: 'red',    txt: '  [!] HONEYPOT SYSTEM ACTIVATED [!]' },
+      { cls: 'red',    txt: '  0XRWISE // INTRUSION DETECTION v2.4' },
+      { cls: 'dim',    txt: '──────────────────────────────────────' },
       { cls: '',       txt: '' },
       { cls: 'yellow', txt: '[!] INTRUSION DETECTION SYSTEM ACTIVATED' },
       { cls: '',       txt: '' },
@@ -219,7 +241,10 @@
   // ════════════════════════════════════════════════════════════════
   if (URL_TRAP) {
     function checkURL(url) {
+      // BUG FIX #6: Cek apakah URL probe sudah pernah di-trigger sesi ini
+      if (SS.get(SESSION_URL_KEY)) return;
       if (url && isSuspicious(String(url))) {
+        SS.set(SESSION_URL_KEY, '1');
         triggerHoneypot('url_probe', { trigger: String(url).substring(0, 200) });
       }
     }
@@ -241,16 +266,16 @@
 
   // ════════════════════════════════════════════════════════════════
   //  [2] CONSOLE / DEVTOOLS PROBE DETECTOR
-  //  Teknik: deteksi lag saat console.log object dengan getter
+  //  BUG FIX #6: Hanya trigger 1x per sesi menggunakan sessionStorage
   // ════════════════════════════════════════════════════════════════
   if (CONSOLE_TRAP) {
-    let devtoolsOpen = false;
-    const threshold  = 160;
+    let devtoolsOpen = SS.get(SESSION_CONSOLE_KEY) === '1';
 
     const probe = /./;
     probe.toString = function () {
       if (!devtoolsOpen) {
         devtoolsOpen = true;
+        SS.set(SESSION_CONSOLE_KEY, '1');
         triggerHoneypot('console_probe', { trigger: 'DevTools opened' });
       }
       return '[0xrwise]';
@@ -259,8 +284,9 @@
     setInterval(() => {
       const t0 = performance.now();
       console.log('%c ', 'color:transparent', probe);
-      if (performance.now() - t0 > threshold && !devtoolsOpen) {
+      if (performance.now() - t0 > 160 && !devtoolsOpen) {
         devtoolsOpen = true;
+        SS.set(SESSION_CONSOLE_KEY, '1');
         triggerHoneypot('console_probe', { trigger: 'DevTools timing probe' });
       }
     }, 2000);
@@ -268,10 +294,6 @@
 
   // ════════════════════════════════════════════════════════════════
   //  [3] LOGIN BRUTE-FORCE TRAP
-  //  Panggil fungsi ini dari kode login di index.html:
-  //    Honeypot.recordLoginFail()   → setiap password salah
-  //    Honeypot.resetLoginAttempts()→ setelah login berhasil
-  //    Honeypot.isLockedOut()       → cek sebelum proses login
   // ════════════════════════════════════════════════════════════════
   const LOGIN = {
     recordLoginFail: async function () {
@@ -302,7 +324,7 @@
       if (!lockUntil) return false;
       if (Date.now() < lockUntil) {
         const remaining = Math.ceil((lockUntil - Date.now()) / 60000);
-        return remaining; // kembalikan menit tersisa
+        return remaining;
       }
       LS.remove('hp_lockout', 'hp_attempts');
       return false;
@@ -310,12 +332,11 @@
   };
 
   // ════════════════════════════════════════════════════════════════
-  //  [4] PUBLIC API — bisa dipakai dari index.html atau console
+  //  [4] PUBLIC API
   // ════════════════════════════════════════════════════════════════
   window.Honeypot = {
     ...LOGIN,
 
-    // Dipanggil dari index.html setelah login fail (sudah ada ipData + devData)
     _sendLoginAlert: async function ({ ipData, devData, meta }) {
       if (!TG_ENABLED || !TG_TOKEN || !TG_CHAT) return;
       const battStr = devData.battery ? `${devData.battery.level}% ${devData.battery.charging ? '[⚡]' : '[bat]'}` : 'N/A';
@@ -336,15 +357,18 @@
         `*Time:* \`${meta.timestamp}\``,
       ].join('\n');
       try {
-        await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+        const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: TG_CHAT, text: lines, parse_mode: 'Markdown' }),
         });
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          console.warn('[HP] Login alert Telegram error:', errBody.description || res.status);
+        }
       } catch {}
     },
 
-    // Owner tools — ketik di console browser
     showLogs: function () {
       const logs = LS.get('hp_logs', []);
       if (!logs.length) { console.log('%c[HP] No logs.', 'color:#00ff41'); return []; }
@@ -363,9 +387,16 @@
       triggerHoneypot('url_probe', { trigger: '[TEST] Manual trigger by owner' });
       console.log('%c[HP] Test alert sent.', 'color:#00ff41');
     },
+
+    // Debug helper — cek status Telegram
+    checkTelegram: function () {
+      console.log('%c[HP] Telegram Status:', 'color:#00ff41; font-weight:bold');
+      console.log('  ENABLED:', TG_ENABLED);
+      console.log('  TOKEN:', TG_TOKEN ? TG_TOKEN.substring(0, 10) + '...' : '(kosong)');
+      console.log('  CHAT_ID:', TG_CHAT || '(kosong)');
+    },
   };
 
-  // backward-compat alias dari versi lama
   window.showHoneypotLogs  = window.Honeypot.showLogs;
   window.clearHoneypotLogs = window.Honeypot.clearLogs;
 
