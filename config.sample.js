@@ -24,7 +24,7 @@ const CONFIG = {
   //   → cara generate: buka console browser, ketik:
   //     CryptoJS.SHA256('password_kamu').toString()
   PANEL_USERNAME     : '0xrwise',   // contoh: '0xrwise'
-  PANEL_PASSWORD_HASH: '8642208265:AAFqnR1kEGDiN3jNCFuAFOl_yIsJawAnnEg',
+  PANEL_PASSWORD_HASH: 'ac6b482c7d0ab5f4e2b1809cf57555f7d7ffd0f9232afbdaf517a2a0b2aa15e3',
 
   // ── TELEGRAM HONEYPOT ALERT ──────────────────────────────────
   // Buat bot: chat @BotFather di Telegram → /newbot
