@@ -114,7 +114,9 @@ hr { border: none; border-top: 1px dashed var(--border-lt); margin: 15px 0; }
 .dir-table tr.parent td a, .gh-table tr.parent td a { color: var(--accent); font-weight: bold; }
 
 .ascii-footer { margin-top: auto; padding-top: 20px; padding-bottom: 20px; user-select: none; }
-.ascii-art { font-family: var(--mono); font-size: 10px; line-height: 1.2; color: var(--border-lt); cursor: pointer; display: inline-block; transition: all .3s; }
+.ascii-art { font-family: var(--mono); font-size: 10px; line-height: 1.2; color: var(--border-lt); cursor: pointer; display: block; transition: all .3s; max-width: 100%; overflow-x: auto; white-space: pre; }
+  @media (max-width: 480px) { .ascii-art { font-size: 6.5px; } #hp-terminal-body { font-size: 10px; line-height: 1.7; } }
+*/
 .ascii-art:hover { color: var(--accent); text-shadow: var(--glow); }
 .ascii-art.clicking { color: var(--danger); text-shadow: 0 0 10px red; }
 .server-sig { font-size: 11px; color: var(--text-3); margin-top: 15px; border-top: 1px dashed var(--border-lt); padding-top: 10px; text-transform: uppercase; }
@@ -551,18 +553,35 @@ input:focus { border-color: var(--accent); box-shadow: inset 0 0 5px rgba(0,255,
 
   <!-- FILES TAB -->
   <div class="tab-panel" id="tab-files">
-    <div class="paste-toolbar" style="padding:10px 0;">
+    <div class="paste-toolbar" style="padding:10px 0; flex-wrap:wrap; gap:6px;">
       <span class="paste-title" id="admin-files-title">GitHub Directory Protocol</span>
-      <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('')">CD /ROOT</button>
+      <div class="toolbar-actions" style="flex-wrap:wrap; gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin(_currentAdminPath||'')">[ REFRESH ]</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('')">CD /ROOT</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminNewFolder()">[ + FOLDER ]</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminNewFile()">[ + FILE ]</button>
+      </div>
     </div>
-    <div class="table-responsive" style="margin-top:0; border-top:none;">
-      <table class="gh-table" style="margin-top:0;">
-        <thead><tr><th>Target Name</th><th>Path Directive</th><th class="hide-mobile">Last Modified</th><th>Cmd</th></tr></thead>
-        <tbody id="admin-files-body"></tbody>
-      </table>
+    <div id="tab-files-list" style="display:flex; flex-direction:column; overflow:hidden;">
+      <div class="table-responsive" style="margin-top:0; border-top:none; overflow-y:auto; flex:1;">
+        <table class="gh-table" style="margin-top:0;">
+          <thead><tr><th>Target Name</th><th>Path Directive</th><th class="hide-mobile">Last Modified</th><th>Cmd</th></tr></thead>
+          <tbody id="admin-files-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- INLINE EDIT PANEL (hidden by default) -->
+    <div id="inline-edit-panel" style="display:none; flex-direction:column; flex:1; border-top:1px solid var(--accent);">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 15px; background:#080808; flex-shrink:0; flex-wrap:wrap; gap:6px;">
+        <span style="font-size:11px; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;" id="inline-edit-title">Editing: —</span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="adminCancelEdit()">[ CANCEL ]</button>
+          <button class="btn btn-primary btn-sm" onclick="adminSaveEdit()">[ SAVE ]</button>
+        </div>
+      </div>
+      <textarea id="inline-edit-area" spellcheck="false" style="flex:1; width:100%; resize:none; background:#020202; border:none; color:var(--accent); font-size:13px; padding:15px; outline:none; font-family:var(--mono); line-height:1.7; overflow-y:auto;"></textarea>
     </div>
   </div>
-</div>
 
 <!-- ════════════════════════════════════════════════════════════════
      ABOUT OVERLAY
@@ -716,7 +735,7 @@ async function fetchCommitDate(path, cellId) {
 
 async function githubRequest(path, method = 'GET', body = null) {
   const token = sessionStorage.getItem('GITHUB_PAT_TEMP');
-  if (!token) throw new Error('Token lost');
+  if (!token) throw new Error('Token hilang — silakan login ulang');
   const url = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/contents/${path}`;
   const options = {
     method,
@@ -724,8 +743,16 @@ async function githubRequest(path, method = 'GET', body = null) {
   };
   if (body) options.body = JSON.stringify(body);
   const res = await fetch(url, options);
-  if (!res.ok && res.status !== 404) throw new Error(await res.text());
-  return res.status === 404 ? null : await res.json();
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    let errMsg = `HTTP ${res.status}`;
+    try { const d = await res.json(); errMsg = d.message || errMsg; } catch {}
+    if (res.status === 401) throw new Error('Token tidak valid atau kadaluarsa. Login ulang & pastikan PAT benar.');
+    if (res.status === 403) throw new Error('Akses ditolak. Token perlu scope "repo" (write). Buat PAT baru.');
+    if (res.status === 422) throw new Error('Konflik file. Refresh file manager lalu coba lagi.');
+    throw new Error(errMsg);
+  }
+  return await res.json();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -752,7 +779,7 @@ async function viewFile(path, url, isEncrypted) {
         /^#{1,6}\s|^\*\*|^>\s|^-\s|\[.*\]\(|^```/m.test(text.substring(0, 500));
       const effectivePath = (!path.endsWith('.md') && looksMarkdown) ? path + '.md' : path;
       openViewer(effectivePath, text);
-    } catch { toast('Fetch Failed: Network Error.', 'error'); }
+    } catch(err) { toast('Gagal: ' + (err.message || 'Coba lagi'), 'error'); }
   }
 }
 
@@ -1152,15 +1179,24 @@ document.getElementById('pub-ok').addEventListener('click', async () => {
     await githubRequest(path, 'PUT', body);
     toast('Operation Successful', 'success');
     loadGitHubFilesAdmin(path.substring(0, path.lastIndexOf('/')));
-  } catch { toast('Transmission Failed', 'error'); }
-});
+  } catch(err) { toast('Gagal: ' + (err.message || 'Transmission Failed'), 'error'); }
+*/});
 
 /* ════════════════════════════════════════════════════════════════
    FILE MANAGER (Admin)
 ════════════════════════════════════════════════════════════════ */
 const PRIVATE_FILES = ['index.html', 'config.js', 'config.sample.js', '.gitignore', 'STRUCTURE.md'];
 
+let _currentAdminPath = '';
+
 async function loadGitHubFilesAdmin(path = '') {
+  _currentAdminPath = path;
+  // Sembunyikan inline editor
+  const editPanel = document.getElementById('inline-edit-panel');
+  const listPanel = document.getElementById('tab-files-list');
+  if (editPanel) editPanel.style.display = 'none';
+  if (listPanel) listPanel.style.display = 'flex';
+
   const tbody = document.getElementById('admin-files-body');
   document.getElementById('admin-files-title').textContent = path === '' ? 'ROOT /' : `DIR /${path}`;
   tbody.innerHTML = '<tr><td colspan="4" style="color:var(--accent);">Scanning directory...</td></tr>';
@@ -1178,24 +1214,130 @@ async function loadGitHubFilesAdmin(path = '') {
       const cid = `admin-date-${fc}`;
       const tr  = document.createElement('tr');
       if (item.type === 'dir') {
-        tr.innerHTML = `<td><a onclick="loadGitHubFilesAdmin('${item.path}')">📁 ${item.name}</a></td><td style="color:var(--accent);">Directory</td><td id="${cid}" class="hide-mobile">Scanning...</td><td></td>`;
+        tr.innerHTML = `
+          <td><a onclick="loadGitHubFilesAdmin('${item.path}')">📁 ${item.name}</a></td>
+          <td style="color:var(--accent);">Directory</td>
+          <td id="${cid}" class="hide-mobile">Scanning...</td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="adminDeleteFolder('${item.path}')">DEL</button>
+          </td>`;
       } else {
-        tr.innerHTML = `<td><a onclick="viewFile('${item.path}','${item.download_url}',${item.name.endsWith('.enc')})">📄 ${item.name}</a></td><td style="color:var(--text-3);">${item.path}</td><td id="${cid}" class="hide-mobile">Scanning...</td><td><button class="btn btn-danger btn-sm" onclick="deleteFile('${item.path}','${item.sha}')">DEL</button></td>`;
+        const encSafeUrl = item.download_url ? item.download_url.replace(/'/g, "\\'") : '';
+        tr.innerHTML = `
+          <td><a onclick="viewFile('${item.path}','${encSafeUrl}',${item.name.endsWith('.enc')})">📄 ${item.name}</a></td>
+          <td style="color:var(--text-3); font-size:11px; word-break:break-all;">${item.path}</td>
+          <td id="${cid}" class="hide-mobile">Scanning...</td>
+          <td style="display:flex; gap:4px; flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="adminEditFile('${item.path}','${encSafeUrl}','${item.sha}')">EDIT</button>
+            <button class="btn btn-ghost btn-sm" onclick="adminRenameFile('${item.path}','${item.sha}')">REN</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFile('${item.path}','${item.sha}')">DEL</button>
+          </td>`;
       }
       tbody.appendChild(tr);
-      fetchCommitDate(item.path, cid);
+      if (item.type !== 'dir') fetchCommitDate(item.path, cid);
     });
-  } catch { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--danger);">Scan failed.</td></tr>'; }
+    if (fc === 0) tbody.innerHTML += '<tr><td colspan="4" style="color:var(--text-3);">Directory kosong.</td></tr>';
+  } catch(err) { tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">Scan failed: ${err.message}</td></tr>`; }
 }
 
+// ── Hapus file
 async function deleteFile(path, sha) {
-  if (!confirm(`Delete ${path}?`)) return;
-  toast('Executing delete...', '');
+  if (!confirm(`Hapus ${path}?`)) return;
+  toast('Menghapus...', '');
   try {
-    await githubRequest(path, 'DELETE', { message: `Delete ${path}`, sha });
-    toast('File wiped.', 'success');
-    loadGitHubFilesAdmin(path.substring(0, path.lastIndexOf('/')));
-  } catch { toast('Delete failed.', 'error'); }
+    await githubRequest(path, 'DELETE', { message: `Delete: ${path}`, sha });
+    toast('File dihapus.', 'success');
+    loadGitHubFilesAdmin(_currentAdminPath);
+  } catch(err) { toast('Hapus gagal: ' + err.message, 'error'); }
+}
+
+// ── Edit file inline
+let _editMeta = { path: '', sha: '' };
+async function adminEditFile(path, downloadUrl, sha) {
+  if (!downloadUrl) { toast('URL tidak tersedia', 'error'); return; }
+  toast('Mengambil file...', '');
+  try {
+    const res = await fetch(downloadUrl + '?t=' + Date.now());
+    if (!res.ok) throw new Error('Fetch gagal');
+    const content = await res.text();
+    _editMeta = { path, sha };
+    document.getElementById('inline-edit-title').textContent = `Editing: ${path}`;
+    document.getElementById('inline-edit-area').value = content;
+    document.getElementById('tab-files-list').style.display = 'none';
+    document.getElementById('inline-edit-panel').style.display = 'flex';
+    toast('', '');
+  } catch(err) { toast('Gagal load file: ' + err.message, 'error'); }
+}
+
+async function adminSaveEdit() {
+  const content = document.getElementById('inline-edit-area').value;
+  toast('Menyimpan...', '');
+  try {
+    const existing = await githubRequest(_editMeta.path);
+    const body = { message: `Edit: ${_editMeta.path}`, content: utoa(content) };
+    if (existing && existing.sha) body.sha = existing.sha;
+    await githubRequest(_editMeta.path, 'PUT', body);
+    toast('Tersimpan!', 'success');
+    adminCancelEdit();
+  } catch(err) { toast('Simpan gagal: ' + err.message, 'error'); }
+}
+
+function adminCancelEdit() {
+  document.getElementById('inline-edit-panel').style.display = 'none';
+  document.getElementById('tab-files-list').style.display = 'flex';
+  _editMeta = { path: '', sha: '' };
+}
+
+// ── Rename file
+async function adminRenameFile(oldPath, sha) {
+  const newName = prompt(`Nama baru untuk: ${oldPath.split('/').pop()}`);
+  if (!newName || newName.trim() === '') return;
+  const dir     = oldPath.substring(0, oldPath.lastIndexOf('/'));
+  const newPath = dir ? `${dir}/${newName.trim()}` : newName.trim();
+  if (newPath === oldPath) return;
+  toast('Mengganti nama...', '');
+  try {
+    // 1. Ambil konten lama
+    const existing = await githubRequest(oldPath);
+    if (!existing) throw new Error('File tidak ditemukan');
+    const content  = atou(existing.content.replace(/\n/g, ''));
+    // 2. Buat file baru
+    await githubRequest(newPath, 'PUT', { message: `Rename: ${oldPath} → ${newPath}`, content: utoa(content) });
+    // 3. Hapus file lama
+    await githubRequest(oldPath, 'DELETE', { message: `Rename cleanup: ${oldPath}`, sha: existing.sha });
+    toast('Berhasil rename!', 'success');
+    loadGitHubFilesAdmin(_currentAdminPath);
+  } catch(err) { toast('Rename gagal: ' + err.message, 'error'); }
+}
+
+// ── Buat folder baru (dengan file .gitkeep di dalamnya)
+async function adminNewFolder() {
+  const folderName = prompt('Nama folder baru:');
+  if (!folderName || folderName.trim() === '') return;
+  const base   = _currentAdminPath ? `${_currentAdminPath}/` : '';
+  const fPath  = `${base}${folderName.trim()}/.gitkeep`;
+  toast('Membuat folder...', '');
+  try {
+    await githubRequest(fPath, 'PUT', { message: `New folder: ${folderName.trim()}`, content: utoa('') });
+    toast('Folder dibuat!', 'success');
+    loadGitHubFilesAdmin(_currentAdminPath);
+  } catch(err) { toast('Gagal buat folder: ' + err.message, 'error'); }
+}
+
+// ── Buat file baru
+async function adminNewFile() {
+  const fileName = prompt('Nama file baru (contoh: notes/artikel.md):');
+  if (!fileName || fileName.trim() === '') return;
+  const base   = _currentAdminPath ? `${_currentAdminPath}/` : '';
+  const fPath  = base + fileName.trim();
+  toast('Membuat file...', '');
+  try {
+    const existing = await githubRequest(fPath);
+    if (existing) { toast('File sudah ada!', 'error'); return; }
+    await githubRequest(fPath, 'PUT', { message: `New file: ${fPath}`, content: utoa('# New File\n\nEdit me!') });
+    toast('File dibuat!', 'success');
+    loadGitHubFilesAdmin(_currentAdminPath);
+  } catch(err) { toast('Gagal buat file: ' + err.message, 'error'); }
 }
 
 /* ════════════════════════════════════════════════════════════════
