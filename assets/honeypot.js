@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════
-//  0XRWISE HONEYPOT MODULE v2.2 (Updated UA-CH)
+//  0XRWISE HONEYPOT MODULE v2.3
 //  File: assets/honeypot.js
 //  Diload setelah config.js di index.html
 //
@@ -12,8 +12,16 @@
 //  [6] Fake Terminal Overlay   — psikologis deterrent
 //  [7] localStorage Log        — log lokal, bisa dibaca owner
 //
-//  BUGFIX v2.2:
-//  - Added User-Agent Client Hints API untuk menangkap OS dan Device Model asli (Bypass Android 10 limit)
+//  SECURITY FIX v2.3:
+//  - Telegram credentials TIDAK lagi dibaca dari CONFIG (hardcoded).
+//  - Token & Chat ID dibaca secara DINAMIS dari localStorage tiap kali
+//    akan kirim alert. Key: 'hp_tg_token' dan 'hp_tg_chat'.
+//  - Isi credentials via Admin Panel > Settings (tidak di-commit ke GitHub).
+//
+//  BUGFIX v2.3:
+//  - mapLink di _sendLoginAlert diperbaiki ke URL Maps yang valid.
+//  - getTGToken / getTGChat fungsi helper agar perubahan credentials
+//    langsung efektif tanpa reload halaman.
 // ════════════════════════════════════════════════════════════════
 
 (function () {
@@ -21,23 +29,35 @@
 
   // ── Ambil config dengan fallback aman ──────────────────────────
   const CFG    = (typeof CONFIG !== 'undefined') ? CONFIG : {};
-  const TG     = CFG.TELEGRAM  || {};
+  const TG_CFG = CFG.TELEGRAM  || {};
   const HP_CFG = CFG.HONEYPOT  || {};
 
-  const TG_TOKEN = TG.BOT_TOKEN || '';
-  const TG_CHAT  = TG.CHAT_ID   || '';
+  // ── SECURITY FIX: Baca token SECARA DINAMIS dari localStorage ──
+  // Fungsi ini dipanggil SETIAP KALI akan kirim alert, bukan sekali
+  // saat init. Ini memastikan credentials yang baru disimpan via
+  // Admin Settings langsung aktif tanpa perlu reload halaman.
+  function getTGToken() {
+    try {
+      return localStorage.getItem('hp_tg_token') || TG_CFG.BOT_TOKEN || '';
+    } catch { return TG_CFG.BOT_TOKEN || ''; }
+  }
+  function getTGChat() {
+    try {
+      return localStorage.getItem('hp_tg_chat') || TG_CFG.CHAT_ID || '';
+    } catch { return TG_CFG.CHAT_ID || ''; }
+  }
+  function isTGEnabled() {
+    const token = getTGToken();
+    const chat  = getTGChat();
+    return TG_CFG.ENABLED === true || (token.length > 10 && chat.length > 3);
+  }
 
-  // BUG FIX #1: Jika ENABLED=false tapi token & chat_id sudah terisi, anggap enabled otomatis
-  // Ini mencegah bug di mana user lupa ganti ENABLED ke true
-  const TG_ENABLED = TG.ENABLED === true || (TG_TOKEN.length > 10 && TG_CHAT.length > 3);
-
-  const SHOW_TERMINAL = HP_CFG.SHOW_TERMINAL !== false;   // default: true
+  const SHOW_TERMINAL = HP_CFG.SHOW_TERMINAL !== false;
   const URL_TRAP      = HP_CFG.URL_TRAP      !== false;
   const CONSOLE_TRAP  = HP_CFG.CONSOLE_TRAP  !== false;
   const MAX_ATTEMPTS  = HP_CFG.MAX_ATTEMPTS  || 5;
   const LOCKOUT_MIN   = HP_CFG.LOCKOUT_MIN   || 30;
 
-  // BUG FIX #6: Session key untuk mencegah notifikasi muncul berulang saat refresh
   const SESSION_CONSOLE_KEY = 'hp_console_triggered';
   const SESSION_URL_KEY     = 'hp_url_triggered';
 
@@ -73,9 +93,8 @@
     remove: (...keys)     => { keys.forEach(k => { try { localStorage.removeItem(k); } catch {} }); },
   };
 
-  // Menggunakan sessionStorage untuk cek per sesi (reset saat tab/browser ditutup)
   const SS = {
-    get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+    get: (k)    => { try { return sessionStorage.getItem(k); } catch { return null; } },
     set: (k, v) => { try { sessionStorage.setItem(k, String(v)); } catch {} },
   };
 
@@ -85,7 +104,6 @@
   let _ipCache = null;
 
   async function getIntruderData(extras = {}) {
-    // 1. Ambil IP Address
     if (!_ipCache) {
       try {
         const r = await Promise.race([
@@ -98,32 +116,30 @@
       }
     }
 
-    // 2. Tarik Data OS & Model Asli (Bypass User-Agent Spoofing)
-    let realOS = "N/A";
-    let deviceModel = "N/A";
-    
+    let realOS = 'N/A';
+    let deviceModel = 'N/A';
+
     if (navigator.userAgentData) {
       try {
-        const uaData = await navigator.userAgentData.getHighEntropyValues(["platformVersion", "model"]);
-        realOS = `${navigator.userAgentData.platform} ${uaData.platformVersion}`;
-        deviceModel = uaData.model || "Unknown";
-      } catch (e) {
-        realOS = "Blocked/Not Supported";
+        const uaData = await navigator.userAgentData.getHighEntropyValues(['platformVersion', 'model']);
+        realOS      = `${navigator.userAgentData.platform} ${uaData.platformVersion}`;
+        deviceModel = uaData.model || 'Unknown';
+      } catch {
+        realOS = 'Blocked/Not Supported';
       }
     }
 
-    // 3. Return Payload
     return {
-      ip        : _ipCache,
-      ua        : navigator.userAgent,
-      real_os   : realOS,       
-      model     : deviceModel,  
-      lang      : navigator.language,
-      screen    : `${screen.width}x${screen.height}`,
-      timezone  : Intl.DateTimeFormat().resolvedOptions().timeZone,
-      referrer  : document.referrer || 'direct',
-      time      : new Date().toISOString(),
-      url       : location.href,
+      ip       : _ipCache,
+      ua       : navigator.userAgent,
+      real_os  : realOS,
+      model    : deviceModel,
+      lang     : navigator.language,
+      screen   : `${screen.width}x${screen.height}`,
+      timezone : Intl.DateTimeFormat().resolvedOptions().timeZone,
+      referrer : document.referrer || 'direct',
+      time     : new Date().toISOString(),
+      url      : location.href,
       ...extras,
     };
   }
@@ -132,9 +148,12 @@
   //  [D] TELEGRAM ALERT
   // ════════════════════════════════════════════════════════════════
   async function sendTelegram(type, data) {
-    // BUG FIX #1: Cek ulang token & chat sebelum kirim
-    if (!TG_ENABLED || !TG_TOKEN || !TG_CHAT) {
-      console.warn('[HP] Telegram tidak terkirim: token/chat_id kosong atau ENABLED=false');
+    // SECURITY FIX: Baca token fresh setiap kali kirim
+    const token = getTGToken();
+    const chat  = getTGChat();
+
+    if (!isTGEnabled() || !token || !chat) {
+      console.warn('[HP] Telegram tidak terkirim: token/chat_id kosong atau belum diatur di Admin > Settings.');
       return;
     }
 
@@ -161,22 +180,21 @@
     ].filter(Boolean).join('\n');
 
     try {
-      const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({
-          chat_id   : TG_CHAT,
+          chat_id   : chat,
           text      : lines,
           parse_mode: 'Markdown',
         }),
       });
-      // BUG FIX #1: Log error response untuk debugging
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         console.warn('[HP] Telegram error:', errBody.description || res.status);
       }
-    } catch (e) {
-      // Diam saja agar honeypot tidak terekspos ke peretas
+    } catch {
+      // Senyap agar honeypot tidak terekspos
     }
   }
 
@@ -199,14 +217,13 @@
     const body    = document.getElementById('hp-terminal-body');
     if (!overlay || !body) return;
 
-    const ip   = _ipCache || '...';
-    const now  = new Date().toISOString();
+    const ip  = _ipCache || '...';
+    const now = new Date().toISOString();
 
-    // BUG FIX #2: ASCII diganti dengan teks yang mobile-friendly (tidak menggunakan box drawing lebar)
     const script = [
       { cls: 'dim',    txt: '──────────────────────────────────────' },
       { cls: 'red',    txt: '  [!] HONEYPOT SYSTEM ACTIVATED [!]' },
-      { cls: 'red',    txt: '  0XRWISE // INTRUSION DETECTION v2.4' },
+      { cls: 'red',    txt: '  0XRWISE // INTRUSION DETECTION v2.3' },
       { cls: 'dim',    txt: '──────────────────────────────────────' },
       { cls: '',       txt: '' },
       { cls: 'yellow', txt: '[!] INTRUSION DETECTION SYSTEM ACTIVATED' },
@@ -243,7 +260,7 @@
   }
 
   // ════════════════════════════════════════════════════════════════
-  //  [G] TRIGGER UTAMA — dipanggil setiap ada kejadian mencurigakan
+  //  [G] TRIGGER UTAMA
   // ════════════════════════════════════════════════════════════════
   async function triggerHoneypot(type, extras = {}) {
     const data = await getIntruderData(extras);
@@ -259,7 +276,6 @@
   // ════════════════════════════════════════════════════════════════
   if (URL_TRAP) {
     function checkURL(url) {
-      // BUG FIX #6: Cek apakah URL probe sudah pernah di-trigger sesi ini
       if (SS.get(SESSION_URL_KEY)) return;
       if (url && isSuspicious(String(url))) {
         SS.set(SESSION_URL_KEY, '1');
@@ -284,7 +300,6 @@
 
   // ════════════════════════════════════════════════════════════════
   //  [2] CONSOLE / DEVTOOLS PROBE DETECTOR
-  //  BUG FIX #6: Hanya trigger 1x per sesi menggunakan sessionStorage
   // ════════════════════════════════════════════════════════════════
   if (CONSOLE_TRAP) {
     let devtoolsOpen = SS.get(SESSION_CONSOLE_KEY) === '1';
@@ -299,11 +314,9 @@
       return '[0xrwise]';
     };
 
-    // BUG FIX: Simpan interval ID agar bisa di-clear, dan stop polling setelah terdeteksi
     const _timingInterval = setInterval(() => {
       if (devtoolsOpen) { clearInterval(_timingInterval); return; }
       const t0 = performance.now();
-      // BUG FIX: Gunakan console.debug agar tidak muncul di console normal user
       console.debug('%c ', 'color:transparent', probe);
       if (performance.now() - t0 > 160) {
         devtoolsOpen = true;
@@ -345,8 +358,7 @@
       const lockUntil = LS.get('hp_lockout', 0);
       if (!lockUntil) return false;
       if (Date.now() < lockUntil) {
-        const remaining = Math.ceil((lockUntil - Date.now()) / 60000);
-        return remaining;
+        return Math.ceil((lockUntil - Date.now()) / 60000);
       }
       LS.remove('hp_lockout', 'hp_attempts');
       return false;
@@ -360,8 +372,18 @@
     ...LOGIN,
 
     _sendLoginAlert: async function ({ ipData, devData, meta }) {
-      if (!TG_ENABLED || !TG_TOKEN || !TG_CHAT) return;
-      const battStr = devData.battery ? `${devData.battery.level}% ${devData.battery.charging ? '[⚡]' : '[bat]'}` : 'N/A';
+      // SECURITY FIX: Baca token fresh, bukan dari closure init
+      const token = getTGToken();
+      const chat  = getTGChat();
+      if (!isTGEnabled() || !token || !chat) return;
+
+      const battStr = devData.battery
+        ? `${devData.battery.level}% ${devData.battery.charging ? '[⚡]' : '[bat]'}`
+        : 'N/A';
+
+      // BUGFIX: Gunakan URL Maps yang valid (bukan proxy googleusercontent)
+      const mapsUrl = `https://maps.google.com/?q=${ipData.lat},${ipData.lon}`;
+
       const lines = [
         `🔑 *0XRWISE — LOGIN FAIL ALERT*`,
         `*Attempt:* \`${meta.attempt} / ${MAX_ATTEMPTS}\``,
@@ -370,7 +392,7 @@
         ``,
         `*IP:* \`${ipData.ip}\`  |  *ISP:* \`${ipData.isp}\``,
         `*Location:* \`${ipData.city}, ${ipData.region}, ${ipData.country}\``,
-        `*Maps:* https://maps.google.com/?q=${ipData.lat},${ipData.lon}`,
+        `*Maps:* ${mapsUrl}`,
         ``,
         `*Device:* \`${devData.deviceType} | ${devData.os} | ${devData.browser}\``,
         `*Screen:* \`${devData.screen_res}\` | *Battery:* \`${battStr}\``,
@@ -378,11 +400,12 @@
         `*Canvas FP:* \`0x${devData.canvasHash}\``,
         `*Time:* \`${meta.timestamp}\``,
       ].join('\n');
+
       try {
-        const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-          method: 'POST',
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: TG_CHAT, text: lines, parse_mode: 'Markdown' }),
+          body   : JSON.stringify({ chat_id: chat, text: lines, parse_mode: 'Markdown' }),
         });
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({}));
@@ -410,12 +433,15 @@
       console.log('%c[HP] Test alert sent.', 'color:#00ff41');
     },
 
-    // Debug helper — cek status Telegram
+    // Debug helper — cek status Telegram (baca dari localStorage)
     checkTelegram: function () {
+      const token = getTGToken();
+      const chat  = getTGChat();
       console.log('%c[HP] Telegram Status:', 'color:#00ff41; font-weight:bold');
-      console.log('  ENABLED:', TG_ENABLED);
-      console.log('  TOKEN:', TG_TOKEN ? TG_TOKEN.substring(0, 10) + '...' : '(kosong)');
-      console.log('  CHAT_ID:', TG_CHAT || '(kosong)');
+      console.log('  ENABLED :', isTGEnabled());
+      console.log('  TOKEN   :', token ? token.substring(0, 10) + '...' : '(kosong — isi via Admin > Settings)');
+      console.log('  CHAT_ID :', chat || '(kosong — isi via Admin > Settings)');
+      console.log('  SOURCE  :', localStorage.getItem('hp_tg_token') ? 'localStorage' : 'config.js');
     },
   };
 
