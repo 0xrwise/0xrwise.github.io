@@ -299,12 +299,16 @@
       return '[0xrwise]';
     };
 
-    setInterval(() => {
+    // BUG FIX: Simpan interval ID agar bisa di-clear, dan stop polling setelah terdeteksi
+    const _timingInterval = setInterval(() => {
+      if (devtoolsOpen) { clearInterval(_timingInterval); return; }
       const t0 = performance.now();
-      console.log('%c ', 'color:transparent', probe);
-      if (performance.now() - t0 > 160 && !devtoolsOpen) {
+      // BUG FIX: Gunakan console.debug agar tidak muncul di console normal user
+      console.debug('%c ', 'color:transparent', probe);
+      if (performance.now() - t0 > 160) {
         devtoolsOpen = true;
         SS.set(SESSION_CONSOLE_KEY, '1');
+        clearInterval(_timingInterval);
         triggerHoneypot('console_probe', { trigger: 'DevTools timing probe' });
       }
     }, 2000);
@@ -370,7 +374,7 @@
         ``,
         `*Device:* \`${devData.deviceType} | ${devData.os} | ${devData.browser}\``,
         `*Screen:* \`${devData.screen_res}\` | *Battery:* \`${battStr}\``,
-        `*TZ:* \`${devData.tz}\`  |  *Lang:* \`${devData.lang}\``,
+        `*TZ:* \`${devData.timezone}\`  |  *Lang:* \`${devData.lang}\``,
         `*Canvas FP:* \`0x${devData.canvasHash}\``,
         `*Time:* \`${meta.timestamp}\``,
       ].join('\n');
