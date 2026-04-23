@@ -1,10 +1,9 @@
 // ════════════════════════════════════════════════════════════════
-//  0XRWISE MAIN.JS — FULL IMPLEMENTATION
+//  0XRWISE MAIN.JS — UPDATED
 //  Depends on: config.js (loaded before this as plain <script>)
 // ════════════════════════════════════════════════════════════════
 
 /* ── Firebase (loaded via CDN compat scripts in index.html) ─── */
-// We use lazy init so the page works even if Firebase is slow
 let _auth = null, _db = null, _firebaseReady = false;
 
 function initFirebase() {
@@ -64,12 +63,19 @@ function fileIcon(name, type) {
 /* ════════════════════════════════════════════════════════════════
    GITHUB API
 ════════════════════════════════════════════════════════════════ */
+function getGHUser() {
+  return localStorage.getItem('__gh_user__') || CONFIG.GITHUB_USER;
+}
+
+function getGHRepo() {
+  return localStorage.getItem('__gh_repo__') || CONFIG.GITHUB_REPO;
+}
+
 async function githubRequest(path, options = {}) {
-  const base    = `https://api.github.com/repos/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}`;
+  const base    = `https://api.github.com/repos/${getGHUser()}/${getGHRepo()}`;
   const headers = { 'Accept': 'application/vnd.github.v3+json', ...options.headers };
 
-  // If logged in with PAT, attach it
-  const pat = sessionStorage.getItem('gh_pat');
+  const pat = localStorage.getItem('__gh_pat__');
   if (pat) headers['Authorization'] = `token ${pat}`;
 
   const res = await fetch(base + path, { ...options, headers });
@@ -78,7 +84,7 @@ async function githubRequest(path, options = {}) {
 }
 
 async function getRawFile(path) {
-  const url = `https://raw.githubusercontent.com/${CONFIG.GITHUB_USER}/${CONFIG.GITHUB_REPO}/main/${path}`;
+  const url = `https://raw.githubusercontent.com/${getGHUser()}/${getGHRepo()}/main/${path}`;
   const res = await fetch(url + '?t=' + Date.now());
   if (!res.ok) throw new Error('File tidak ditemukan: ' + path);
   return res.text();
@@ -96,60 +102,63 @@ function showPage(id) {
   if (target) target.style.display = 'flex';
 }
 
-function handleHash() {
-  const hash = window.location.hash.slice(1); // remove #
+function closeAllOverlays() {
+  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+}
 
-  // About overlay
-  if (hash === 'about') {
-    showPage('public-page');
-    document.getElementById('about-overlay')?.classList.add('active');
-    startTagline('about-tagline');
-    return;
-  }
-
-  // Login overlay
-  if (hash === 'login') {
+/* ════════════════════════════════════════════════════════════════
+   SECURE ROUTER — listen for custom events dispatched by index.html
+════════════════════════════════════════════════════════════════ */
+function initRouter() {
+  // Login route
+  document.addEventListener('route:login', () => {
     showPage('public-page');
     document.getElementById('login-overlay')?.classList.add('active');
-    return;
-  }
+  });
 
-  // Admin (requires auth)
-  if (hash === 'admin') {
+  // Admin route (requires auth)
+  document.addEventListener('route:admin', () => {
     if (isLoggedIn()) {
       showPage('admin-page');
       loadGitHubFilesAdmin('');
     } else {
       window.location.hash = 'login';
     }
-    return;
-  }
+  });
 
-  // File viewer: #file/path/to/file.md
-  if (hash.startsWith('file/')) {
-    const filePath = hash.slice(5);
-    showPage('viewer-page');
-    loadFileViewer(filePath);
-    return;
-  }
+  // About route
+  document.addEventListener('route:about', () => {
+    showPage('public-page');
+    document.getElementById('about-overlay')?.classList.add('active');
+    startTagline('about-tagline');
+  });
 
-  // Directory: #dir/some/path
-  if (hash.startsWith('dir/')) {
-    const dirPath = hash.slice(4);
+  // Generic hash route — carries the raw hash string in event.detail
+  document.addEventListener('route:hash', (e) => {
+    const hash = (e.detail || '').replace(/^#/, '');
+
+    // File viewer: file/path/to/file.md
+    if (hash.startsWith('file/')) {
+      const filePath = hash.slice(5);
+      showPage('viewer-page');
+      loadFileViewer(filePath);
+      return;
+    }
+
+    // Directory: dir/some/path
+    if (hash.startsWith('dir/')) {
+      const dirPath = hash.slice(4);
+      showPage('public-page');
+      closeAllOverlays();
+      loadPublicDirectory(dirPath);
+      return;
+    }
+
+    // Default: public home
     showPage('public-page');
     closeAllOverlays();
-    loadPublicDirectory(dirPath);
-    return;
-  }
-
-  // Default: public home
-  showPage('public-page');
-  closeAllOverlays();
-  loadPublicDirectory('');
-}
-
-function closeAllOverlays() {
-  document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+    loadPublicDirectory('');
+  });
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -166,20 +175,17 @@ async function loadPublicDirectory(path) {
   try {
     const items = await githubRequest('/contents/' + path);
 
-    // Sort: dirs first, then files
     items.sort((a, b) => {
       if (a.type === 'dir' && b.type !== 'dir') return -1;
       if (a.type !== 'dir' && b.type === 'dir') return 1;
       return a.name.localeCompare(b.name);
     });
 
-    // Filter out system files
     const HIDDEN = ['.git','_config.yml','CNAME','LICENSE','README.md','style.css','main.js','config.js','honeypot.js'];
     const visible = items.filter(i => !HIDDEN.includes(i.name) && !i.name.startsWith('.'));
 
     let html = '';
 
-    // Parent directory link
     if (path) {
       const parent = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : '';
       html += `<tr class="parent">
@@ -241,7 +247,6 @@ async function loadFileViewer(filePath) {
   try {
     const raw = await getRawFile(filePath);
 
-    // Encrypted file
     if (filePath.endsWith('.enc')) {
       _currentFileContent = raw;
       content.innerHTML   = `<div style="padding:30px;text-align:center;">
@@ -266,7 +271,6 @@ function renderMarkdown(raw, container) {
     return;
   }
 
-  // Setup marked with highlight.js
   if (typeof markedHighlight !== 'undefined' && typeof hljs !== 'undefined') {
     marked.use(markedHighlight.markedHighlight({
       langPrefix: 'hljs language-',
@@ -281,7 +285,6 @@ function renderMarkdown(raw, container) {
   const clean = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(dirty) : dirty;
   container.innerHTML = clean;
 
-  // KaTeX render
   if (typeof renderMathInElement !== 'undefined') {
     renderMathInElement(container, {
       delimiters: [
@@ -302,6 +305,10 @@ function showDecryptOverlay() {
   document.getElementById('decrypt-overlay')?.classList.add('active');
 }
 
+function closeDecryptOverlay() {
+  document.getElementById('decrypt-overlay')?.classList.remove('active');
+}
+
 function doDecrypt() {
   const key = document.getElementById('decrypt-pw')?.value;
   const err = document.getElementById('decrypt-error');
@@ -311,8 +318,7 @@ function doDecrypt() {
     const bytes   = CryptoJS.AES.decrypt(_currentFileContent, key);
     const decoded = bytes.toString(CryptoJS.enc.Utf8);
     if (!decoded) throw new Error('Key salah');
-    closeAllOverlays();
-    window.history.back();
+    closeDecryptOverlay();
     const content = document.getElementById('viewer-content');
     if (content) renderMarkdown(decoded, content);
   } catch {
@@ -330,7 +336,6 @@ function isLoggedIn() {
 async function doLogin() {
   const email = document.getElementById('username-input')?.value?.trim();
   const pass  = document.getElementById('pw-input')?.value;
-  const pat   = document.getElementById('pat-input')?.value?.trim();
   const err   = document.getElementById('login-error');
 
   if (!email || !pass) { if (err) err.textContent = 'Isi semua field!'; return; }
@@ -346,7 +351,6 @@ async function doLogin() {
   try {
     await _auth.signInWithEmailAndPassword(email, pass);
     sessionStorage.setItem('logged_in', '1');
-    if (pat) sessionStorage.setItem('gh_pat', pat);
     closeAllOverlays();
     window.location.hash = 'admin';
   } catch (e) {
@@ -406,12 +410,14 @@ window._currentAdminPath = '';
 
 async function loadGitHubFilesAdmin(path) {
   window._currentAdminPath = path;
-  const tbody = document.getElementById('admin-files-body');
-  const title = document.getElementById('admin-files-title');
-  if (!tbody) return;
 
+  const title = document.getElementById('admin-files-title');
   if (title) title.textContent = 'GitHub: /' + (path || '');
-  tbody.innerHTML = `<tr><td colspan="4" style="color:var(--accent);">» Loading...</td></tr>`;
+
+  // Show loading state if renderAdminFiles supports it
+  if (typeof window.renderAdminFiles === 'function') {
+    window.renderAdminFiles(null); // null signals loading state
+  }
 
   try {
     const items = await githubRequest('/contents/' + path);
@@ -421,51 +427,39 @@ async function loadGitHubFilesAdmin(path) {
       return a.name.localeCompare(b.name);
     });
 
-    let html = '';
-    if (path) {
-      const parent = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : '';
-      html += `<tr class="parent"><td colspan="2" onclick="loadGitHubFilesAdmin('${parent}')" style="cursor:pointer;color:var(--accent);">📁 ../</td><td>—</td><td>—</td></tr>`;
+    if (typeof window.renderAdminFiles === 'function') {
+      window.renderAdminFiles(items);
     }
-
-    for (const item of items) {
-      const isDir = item.type === 'dir';
-      html += `<tr>
-        <td>${fileIcon(item.name, item.type)} ${item.name}</td>
-        <td style="color:var(--text-3);font-size:11px;">${item.path}</td>
-        <td class="hide-mobile" style="color:var(--text-3);font-size:11px;">${formatSize(item.size)}</td>
-        <td style="display:flex;gap:6px;flex-wrap:wrap;">
-          ${isDir
-            ? `<button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('${item.path}')">[ OPEN ]</button>`
-            : `<button class="btn btn-ghost btn-sm" onclick="adminEditFile('${item.path}','${item.sha}')">[ EDIT ]</button>
-               <button class="btn btn-danger btn-sm" onclick="adminDeleteFile('${item.path}','${item.sha}')">[ DEL ]</button>`
-          }
-        </td>
-      </tr>`;
-    }
-
-    tbody.innerHTML = html || `<tr><td colspan="4" style="color:var(--text-3);">// Kosong</td></tr>`;
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">[ERR] ${err.message}</td></tr>`;
+    if (typeof window.renderAdminFiles === 'function') {
+      window.renderAdminFiles([], err.message);
+    }
+    showToast('[ERR] ' + err.message, true);
   }
 }
 
 let _editingSha  = '';
 let _editingPath = '';
 
-async function adminEditFile(path, sha) {
+async function adminEditFile(path, name) {
   _editingPath = path;
-  _editingSha  = sha;
+  _editingSha  = ''; // will be fetched fresh
+
   const panel = document.getElementById('inline-edit-panel');
   const list  = document.getElementById('tab-files-list');
   const area  = document.getElementById('inline-edit-area');
   const ttl   = document.getElementById('inline-edit-title');
 
-  if (ttl)  ttl.textContent  = 'Editing: ' + path;
-  if (area) area.value       = '» Loading...';
+  if (ttl)  ttl.textContent = 'Editing: ' + path;
+  if (area) area.value      = '» Loading...';
   if (list)  list.style.display  = 'none';
-  if (panel) { panel.style.display = 'flex'; }
+  if (panel) panel.style.display = 'flex';
 
   try {
+    // Fetch fresh SHA from API
+    const meta = await githubRequest('/contents/' + path);
+    _editingSha = meta.sha || '';
+
     const raw = await getRawFile(path);
     if (area) area.value = raw;
   } catch (e) {
@@ -478,23 +472,27 @@ function adminCancelEdit() {
   document.getElementById('tab-files-list').style.display    = 'flex';
 }
 
+// Unified save: create if no SHA, update if SHA present
 async function adminSaveEdit() {
   const area    = document.getElementById('inline-edit-area');
   const content = area?.value || '';
-  const pat     = sessionStorage.getItem('gh_pat');
+  const pat     = localStorage.getItem('__gh_pat__');
   if (!pat) { showToast('PAT diperlukan untuk push!', true); return; }
 
   try {
     const encoded = btoa(unescape(encodeURIComponent(content)));
+    const body    = {
+      message: `${_editingSha ? 'Update' : 'Create'} ${_editingPath} via 0xrwise terminal`,
+      content: encoded,
+    };
+    if (_editingSha) body.sha = _editingSha;
+
     await githubRequest('/contents/' + _editingPath, {
       method: 'PUT',
-      body: JSON.stringify({
-        message: `Update ${_editingPath} via 0xrwise terminal`,
-        content: encoded,
-        sha: _editingSha,
-      })
+      body: JSON.stringify(body)
     });
-    showToast('File berhasil disimpan!');
+
+    showToast(_editingSha ? 'File berhasil disimpan!' : 'File berhasil dibuat!');
     adminCancelEdit();
     loadGitHubFilesAdmin(window._currentAdminPath);
   } catch (err) {
@@ -502,28 +500,73 @@ async function adminSaveEdit() {
   }
 }
 
-async function adminDeleteFile(path, sha) {
-  if (!confirm(`Hapus ${path}?`)) return;
-  const pat = sessionStorage.getItem('gh_pat');
-  if (!pat) { showToast('PAT diperlukan!', true); return; }
+async function adminDeleteFile(path, name) {
+  const label = name || path;
+  const msg   = `Hapus file "${label}"?`;
 
-  try {
-    await githubRequest('/contents/' + path, {
-      method: 'DELETE',
-      body: JSON.stringify({
-        message: `Delete ${path} via 0xrwise terminal`,
-        sha,
-      })
-    });
-    showToast('File dihapus!');
-    loadGitHubFilesAdmin(window._currentAdminPath);
-  } catch (err) {
-    showToast('[ERR] ' + err.message, true);
+  const doDelete = async () => {
+    const pat = localStorage.getItem('__gh_pat__');
+    if (!pat) { showToast('PAT diperlukan!', true); return; }
+
+    try {
+      // Fetch fresh SHA before delete
+      const meta = await githubRequest('/contents/' + path);
+      await githubRequest('/contents/' + path, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          message: `Delete ${path} via 0xrwise terminal`,
+          sha: meta.sha,
+        })
+      });
+      showToast('File dihapus!');
+      loadGitHubFilesAdmin(window._currentAdminPath);
+    } catch (err) {
+      showToast('[ERR] ' + err.message, true);
+    }
+  };
+
+  if (typeof window.openConfirmModal === 'function') {
+    window.openConfirmModal(msg, doDelete);
+  } else {
+    if (confirm(msg)) doDelete();
   }
 }
 
 function adminNewFile() {
-  const name = prompt('Nama file baru (contoh: notes/intel.md):');
+  const openModal = (defaultName = '') => {
+    if (typeof window.openConfirmModal === 'function') {
+      // Use the custom modal — index.html provides #new-file-modal if available
+      const modal = document.getElementById('new-file-modal');
+      if (modal) {
+        modal.classList.add('active');
+        const input = modal.querySelector('input[data-role="filename"]');
+        if (input) {
+          input.value = defaultName;
+          input.focus();
+        }
+        return;
+      }
+      // Fallback: openConfirmModal with an input prompt pattern
+    }
+    // Native fallback
+    const name = prompt('Nama file baru (contoh: notes/intel.md):');
+    if (!name) return;
+    _editingPath = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name;
+    _editingSha  = '';
+    const panel = document.getElementById('inline-edit-panel');
+    const list  = document.getElementById('tab-files-list');
+    const area  = document.getElementById('inline-edit-area');
+    const ttl   = document.getElementById('inline-edit-title');
+    if (ttl)  ttl.textContent = 'New: ' + _editingPath;
+    if (area) area.value      = '';
+    if (list)  list.style.display  = 'none';
+    if (panel) panel.style.display = 'flex';
+  };
+
+  openModal();
+}
+
+function adminConfirmNewFile(name) {
   if (!name) return;
   _editingPath = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name;
   _editingSha  = '';
@@ -537,38 +580,35 @@ function adminNewFile() {
   if (panel) panel.style.display = 'flex';
 }
 
-async function adminSaveNew() {
-  const area    = document.getElementById('inline-edit-area');
-  const content = area?.value || '';
-  const pat     = sessionStorage.getItem('gh_pat');
-  if (!pat) { showToast('PAT diperlukan!', true); return; }
-
-  try {
-    const encoded = btoa(unescape(encodeURIComponent(content)));
-    await githubRequest('/contents/' + _editingPath, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `Create ${_editingPath} via 0xrwise terminal`,
-        content: encoded,
-      })
-    });
-    showToast('File dibuat!');
-    adminCancelEdit();
-    loadGitHubFilesAdmin(window._currentAdminPath);
-  } catch (err) {
-    showToast('[ERR] ' + err.message, true);
-  }
-}
-
 function adminNewFolder() {
+  const createFolder = (name) => {
+    if (!name) return;
+    const path = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name + '/.gitkeep';
+    _editingPath = path;
+    _editingSha  = '';
+    const area = document.getElementById('inline-edit-area');
+    if (area) area.value = '';
+    adminSaveEdit();
+  };
+
+  if (typeof window.openConfirmModal === 'function') {
+    const modal = document.getElementById('new-file-modal');
+    if (modal) {
+      modal.classList.add('active');
+      const input = modal.querySelector('input[data-role="filename"]');
+      if (input) {
+        input.value = '';
+        input.placeholder = 'Nama folder baru';
+        input.focus();
+        // Override confirm action for folder creation
+        modal.dataset.mode = 'folder';
+        return;
+      }
+    }
+  }
+  // Native fallback
   const name = prompt('Nama folder baru:');
-  if (!name) return;
-  const path = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name + '/.gitkeep';
-  _editingPath = path;
-  _editingSha  = '';
-  const area = document.getElementById('inline-edit-area');
-  if (area) area.value = '';
-  adminSaveNew();
+  createFolder(name);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -579,7 +619,6 @@ function initPasteTab() {
   const status = document.getElementById('paste-save-status');
   if (!area) return;
 
-  // Load draft
   const draft = localStorage.getItem('0xrwise_draft');
   if (draft) area.value = draft;
 
@@ -615,7 +654,6 @@ function initEditorTab() {
 
   input.addEventListener('input', updatePreview);
 
-  // Toolbar buttons
   document.querySelectorAll('.tb-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.action;
@@ -641,16 +679,52 @@ function initEditorTab() {
       };
 
       if (action === 'image') {
+        if (typeof window.openImgModal === 'function') {
+          window.openImgModal((url, alt) => {
+            if (url) {
+              ins = `![${alt || sel || 'alt'}](${url})`;
+              input.setRangeText(ins, start, end, 'end');
+              input.dispatchEvent(new Event('input'));
+              input.focus();
+            }
+          });
+          return;
+        }
         const url = prompt('URL gambar:');
         if (url) ins = `![${sel || 'alt'}](${url})`;
         else return;
       } else if (action === 'video') {
+        if (typeof window.openVideoModal === 'function') {
+          window.openVideoModal((url) => {
+            if (url) {
+              const id = url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1];
+              ins = id
+                ? `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`
+                : url;
+              input.setRangeText(ins, start, end, 'end');
+              input.dispatchEvent(new Event('input'));
+              input.focus();
+            }
+          });
+          return;
+        }
         const url = prompt('YouTube URL:');
         if (url) {
           const id = url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1];
           ins = id ? `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>` : url;
         } else return;
       } else if (action === 'link') {
+        if (typeof window.openLinkModal === 'function') {
+          window.openLinkModal((url, text) => {
+            if (url) {
+              ins = `[${text || sel || 'link'}](${url})`;
+              input.setRangeText(ins, start, end, 'end');
+              input.dispatchEvent(new Event('input'));
+              input.focus();
+            }
+          });
+          return;
+        }
         const url = prompt('URL:');
         if (url) ins = `[${sel || 'link'}](${url})`;
         else return;
@@ -664,7 +738,6 @@ function initEditorTab() {
     });
   });
 
-  // View toggle
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -709,7 +782,7 @@ function initPublishOverlay() {
     const key1     = document.getElementById('pub-enc-key')?.value;
     const key2     = document.getElementById('pub-enc-key2')?.value;
     const errEl    = document.getElementById('pub-error');
-    const pat      = sessionStorage.getItem('gh_pat');
+    const pat      = localStorage.getItem('__gh_pat__');
 
     if (!filename) { if (errEl) errEl.textContent = 'Isi nama file!'; return; }
     if (!pat)      { if (errEl) errEl.textContent = 'PAT diperlukan!'; return; }
@@ -727,7 +800,6 @@ function initPublishOverlay() {
     if (errEl) errEl.textContent = '» Pushing...';
 
     try {
-      // Check if file exists (get SHA)
       let sha;
       try {
         const existing = await githubRequest('/contents/' + path);
@@ -753,30 +825,33 @@ function initPublishOverlay() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SETTINGS TAB (Telegram)
+   SETTINGS TAB (Telegram only — GitHub & brand handled by index.html)
 ════════════════════════════════════════════════════════════════ */
 function initSettingsTab() {
   const tokenInput = document.getElementById('settings-tg-token');
   const chatInput  = document.getElementById('settings-tg-chat');
   const statusEl   = document.getElementById('settings-tg-status');
 
-  // Load saved
+  // Load saved Telegram config
   if (tokenInput) tokenInput.value = localStorage.getItem('tg_token') || '';
   if (chatInput)  chatInput.value  = localStorage.getItem('tg_chat')  || '';
 
   if (statusEl) {
     const t = localStorage.getItem('tg_token');
     const c = localStorage.getItem('tg_chat');
-    statusEl.innerHTML = t && c
-      ? `<span style="color:var(--accent);">● CONFIGURED</span><br>Chat ID: ${c}`
-      : `<span style="color:var(--text-3);">● NOT SET</span>`;
+    const p = localStorage.getItem('__gh_pat__');
+    statusEl.innerHTML = (t && c)
+      ? `<span style="color:var(--accent);">● CONFIGURED</span><br>Chat ID: ${c}${p ? '<br><span style="color:var(--text-3);font-size:10px;">PAT: ••••••••' + p.slice(-4) + '</span>' : ''}`
+      : `<span style="color:var(--text-3);">● NOT SET</span>${p ? '<br><span style="color:var(--accent);font-size:10px;">PAT: ••••••••' + p.slice(-4) + '</span>' : ''}`;
   }
 
   document.getElementById('settings-save-btn')?.addEventListener('click', () => {
     localStorage.setItem('tg_token', tokenInput?.value || '');
     localStorage.setItem('tg_chat',  chatInput?.value  || '');
     showToast('Telegram config disimpan!');
-    window.CONFIG.TELEGRAM.ENABLED = !!(tokenInput?.value && chatInput?.value);
+    if (window.CONFIG?.TELEGRAM) {
+      window.CONFIG.TELEGRAM.ENABLED = !!(tokenInput?.value && chatInput?.value);
+    }
   });
 
   document.getElementById('settings-test-btn')?.addEventListener('click', async () => {
@@ -834,7 +909,7 @@ function startTagline(elId) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   ASCII LOGO CLICK EFFECT
+   ASCII LOGO — visual dots only, navigation handled by index.html
 ════════════════════════════════════════════════════════════════ */
 function initAsciiLogo() {
   const logo     = document.getElementById('ascii-logo');
@@ -848,18 +923,19 @@ function initAsciiLogo() {
     if (dotsWrap) dotsWrap.style.display = 'inline-flex';
     logo.classList.add('clicking');
 
-    // Fill dots
     for (let i = 1; i <= Math.min(clicks, 5); i++) {
       document.getElementById('d' + i)?.classList.add('filled');
     }
 
     setTimeout(() => logo.classList.remove('clicking'), 200);
 
+    // Reset dots after 5 clicks — navigation is handled by secure router in index.html
     if (clicks >= 5) {
       clicks = 0;
-      window.location.hash = 'login';
-      if (dotsWrap) dotsWrap.style.display = 'none';
-      document.querySelectorAll('.click-dot').forEach(d => d.classList.remove('filled'));
+      setTimeout(() => {
+        if (dotsWrap) dotsWrap.style.display = 'none';
+        document.querySelectorAll('.click-dot').forEach(d => d.classList.remove('filled'));
+      }, 400);
     }
   });
 }
@@ -974,7 +1050,7 @@ function initOverlayButtons() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   EXPOSE GLOBALS needed by inline onclick handlers in index.html
+   GLOBAL EXPORTS
 ════════════════════════════════════════════════════════════════ */
 window.loadPublicDirectory    = loadPublicDirectory;
 window.loadFileViewer         = loadFileViewer;
@@ -985,7 +1061,25 @@ window.adminCancelEdit        = adminCancelEdit;
 window.adminSaveEdit          = adminSaveEdit;
 window.adminNewFile           = adminNewFile;
 window.adminNewFolder         = adminNewFolder;
+window.adminConfirmNewFile    = adminConfirmNewFile;
 window.showDecryptOverlay     = showDecryptOverlay;
+window.closeDecryptOverlay    = closeDecryptOverlay;
+window.doDecrypt              = doDecrypt;
+window.doLogin                = doLogin;
+window.doLogout               = doLogout;
+window.showToast              = showToast;
+window.renderMarkdown         = renderMarkdown;
+window.startTagline           = startTagline;
+window.formatSize             = formatSize;
+window.formatDate             = formatDate;
+window.fileIcon               = fileIcon;
+window.getRawFile             = getRawFile;
+window.githubRequest          = githubRequest;
+window.getGHUser              = getGHUser;
+window.getGHRepo              = getGHRepo;
+window.isLoggedIn             = isLoggedIn;
+window.closeAllOverlays       = closeAllOverlays;
+window.showPage               = showPage;
 
 /* ════════════════════════════════════════════════════════════════
    BOOT
@@ -993,6 +1087,9 @@ window.showDecryptOverlay     = showDecryptOverlay;
 document.addEventListener('DOMContentLoaded', () => {
   // Init Firebase (non-blocking)
   initFirebase();
+
+  // Init secure router (listens for custom events from index.html)
+  initRouter();
 
   // Init all UI modules
   initCrtToggle();
@@ -1008,8 +1105,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start tagline on public page footer
   startTagline('agent-tagline');
-
-  // Handle current URL hash, then listen for changes
-  handleHash();
-  window.addEventListener('hashchange', handleHash);
 });
