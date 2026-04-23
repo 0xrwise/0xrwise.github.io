@@ -2,22 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>0xrwise // TERMINAL</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title id="meta-title">0xrwise // TERMINAL</title>
 
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" />
+  <!-- Dynamic favicon placeholder -->
+  <link rel="icon" type="image/svg+xml" id="favicon-link" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" />
 
-  <meta property="og:type"         content="website" />
-  <meta property="og:site_name"    content="0xrwise // TERMINAL" />
-  <meta property="og:title"        content="0xrwise // TERMINAL" />
-  <meta property="og:description"  content="Secure digital knowledge base. Encrypted notes, markdown articles, and pastebin — powered by GitHub." />
-  <meta property="og:image"        content="https://opengraph.githubassets.com/1/0xrwise" />
-  <meta property="og:url"          content="https://0xrwise.github.io/" />
-  <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:title"       content="0xrwise // TERMINAL" />
-  <meta name="twitter:description" content="Secure digital knowledge base." />
-  <meta name="twitter:image"       content="https://opengraph.githubassets.com/1/0xrwise" />
-  <meta name="description"         content="Secure digital knowledge base. Encrypted notes and markdown articles." />
+  <!-- OG / Twitter meta (dynamically updated via JS) -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   id="og-site-name"  content="0xrwise // TERMINAL" />
+  <meta property="og:title"       id="og-title"       content="0xrwise // TERMINAL" />
+  <meta property="og:description" id="og-desc"        content="Secure digital knowledge base." />
+  <meta property="og:image"       id="og-image"       content="https://opengraph.githubassets.com/1/0xrwise" />
+  <meta property="og:url"         content="https://0xrwise.github.io/" />
+  <meta name="twitter:card"       content="summary_large_image" />
+  <meta name="description"        id="meta-desc"      content="Secure digital knowledge base. Encrypted notes and markdown articles." />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,6 +24,261 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* ════════════════════════════════════════════
+       CUSTOM IMAGE DIALOG — replaces native prompt
+       ════════════════════════════════════════════ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #060606;
+      border: 1px solid var(--accent, #00ff41);
+      box-shadow: 0 0 30px rgba(0,255,65,0.15), 0 0 60px rgba(0,255,65,0.05);
+      padding: 28px 24px 20px;
+      width: min(420px, 92vw);
+      font-family: 'JetBrains Mono', monospace;
+      position: relative;
+      animation: modalIn 0.18s ease;
+    }
+    @keyframes modalIn {
+      from { opacity:0; transform: translateY(-12px) scale(0.97); }
+      to   { opacity:1; transform: translateY(0)     scale(1);    }
+    }
+    .modal-box h3 {
+      font-size: 11px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent, #00ff41);
+      margin-bottom: 14px;
+    }
+    .modal-box label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .1em;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .modal-box input[type="text"],
+    .modal-box input[type="url"],
+    .modal-box input[type="password"],
+    .modal-box input[type="email"],
+    .modal-box input[type="file"],
+    .modal-box textarea,
+    .modal-box select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #000;
+      border: 1px solid #2a2a2a;
+      color: var(--accent, #00ff41);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    .modal-box input:focus,
+    .modal-box textarea:focus { border-color: var(--accent, #00ff41); }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .btn-modal-cancel {
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 7px 14px;
+      cursor: pointer;
+      letter-spacing: .05em;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-modal-cancel:hover { border-color: #666; color: #ccc; }
+    .btn-modal-ok {
+      background: var(--accent, #00ff41);
+      border: none;
+      color: #000;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 18px;
+      cursor: pointer;
+      letter-spacing: .05em;
+      transition: opacity .2s;
+    }
+    .btn-modal-ok:hover { opacity: .85; }
+    .btn-modal-danger {
+      background: #ff2222;
+      border: none;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 18px;
+      cursor: pointer;
+      letter-spacing: .05em;
+    }
+
+    /* ════════════════════════════════════════════
+       ADMIN FEATURE ENHANCEMENTS
+       ════════════════════════════════════════════ */
+
+    /* File table badges */
+    .badge {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: .08em;
+      padding: 2px 6px;
+      border-radius: 0;
+      text-transform: uppercase;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .badge-hidden { background: #1a1a1a; color: #666; border: 1px solid #333; }
+    .badge-enc    { background: rgba(255,30,30,.15); color: #ff4444; border: 1px solid #ff222244; }
+    .badge-pub    { background: rgba(0,255,65,.08);  color: #00ff41; border: 1px solid #00ff4122; }
+
+    /* Admin file action buttons */
+    .file-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
+    .file-actions button {
+      background: transparent;
+      border: 1px solid #222;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      padding: 3px 6px;
+      cursor: pointer;
+      letter-spacing: .05em;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .file-actions button:hover { border-color: var(--accent, #00ff41); color: var(--accent, #00ff41); }
+    .file-actions button.danger:hover { border-color: #ff4444; color: #ff4444; }
+
+    /* Admin sidebar stats */
+    .admin-stat-bar {
+      display: flex;
+      gap: 16px;
+      padding: 8px 16px;
+      background: #040404;
+      border-bottom: 1px solid #111;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      font-size: 10px;
+      color: #555;
+      letter-spacing: .08em;
+    }
+    .admin-stat-bar span { color: var(--accent, #00ff41); }
+
+    /* Settings sections */
+    .settings-section {
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px dashed #1a1a1a;
+    }
+    .settings-section:last-child { border-bottom: none; }
+    .settings-section h3 {
+      font-size: 10px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent, #00ff41);
+      margin-bottom: 14px;
+    }
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 500px) { .settings-row { grid-template-columns: 1fr; } }
+    .settings-label {
+      display: block;
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 5px;
+    }
+    .settings-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #000;
+      border: 1px solid #1e1e1e;
+      color: var(--accent, #00ff41);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color .2s;
+    }
+    .settings-input:focus { border-color: var(--accent, #00ff41); }
+
+    /* Favicon preview */
+    #favicon-preview-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border: 1px dashed #222;
+      margin-bottom: 12px;
+    }
+    #favicon-preview-img {
+      width: 32px; height: 32px;
+      border: 1px solid #333;
+      object-fit: contain;
+      background: #000;
+      image-rendering: pixelated;
+    }
+    #og-preview-img {
+      width: 100%;
+      max-height: 120px;
+      object-fit: cover;
+      border: 1px solid #222;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    /* Hide-file toggle in file list */
+    .row-hidden { opacity: 0.35; }
+
+    /* Improved responsive table */
+    .admin-table-wrap { overflow-x: auto; flex: 1; }
+    .gh-table { min-width: 500px; }
+
+    /* Secure hash status */
+    #hash-status {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      font-size: 9px;
+      color: #2a2a2a;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .05em;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Mobile nav improvements */
+    @media (max-width: 480px) {
+      .admin-tabs { gap: 0; overflow-x: auto; }
+      .admin-tab  { font-size: 10px; padding: 8px 10px; white-space: nowrap; flex-shrink: 0; }
+    }
+  </style>
 </head>
 <body>
 
@@ -39,8 +293,8 @@
     </span>
     <div style="display:flex;gap:2px;align-items:center;">
       <button title="Home"   aria-label="Home" onclick="loadPublicDirectory('');window.location.hash=''" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌂</button>
-      <button title="Search" aria-label="Search" id="nav-search-btn"                                   style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌕</button>
-      <button title="About"  aria-label="About"  onclick="window.location.hash='about'"                style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⊙</button>
+      <button title="Search" aria-label="Search" id="nav-search-btn" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌕</button>
+      <button title="About"  aria-label="About"  onclick="showAbout()" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⊙</button>
       <button title="Toggle CRT" aria-label="Toggle CRT scanline" id="crt-toggle-btn" style="background:transparent;border:none;color:var(--text-3);font-size:11px;cursor:pointer;padding:6px 8px;letter-spacing:.05em;font-family:var(--mono);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">CRT</button>
     </div>
   </nav>
@@ -125,7 +379,7 @@
 ══════════════════════════════════════════════════════════════ -->
 <div id="admin-page">
   <div class="admin-bar">
-    <span class="brand">0<span>x</span>rwise <span style="color:#fff;font-weight:400;">// root</span></span>
+    <span class="brand">0<span>x</span>rwise <span style="color:#fff;font-weight:400;">// root@mainframe</span></span>
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="tab-paste">Notepad</button>
       <button class="admin-tab"        data-tab="tab-blog">Editor</button>
@@ -133,6 +387,15 @@
       <button class="admin-tab"        data-tab="tab-settings" style="margin-left:auto;">Settings</button>
       <button id="logout-btn" class="admin-tab" style="color:var(--danger);">Logout</button>
     </div>
+  </div>
+
+  <!-- Admin stat bar -->
+  <div class="admin-stat-bar" id="admin-stat-bar">
+    <div>REPO: <span id="stat-repo">—</span></div>
+    <div>FILES: <span id="stat-files">—</span></div>
+    <div>HIDDEN: <span id="stat-hidden">—</span></div>
+    <div>SESSION: <span id="stat-session">—</span></div>
+    <div style="margin-left:auto;">PAT: <span id="stat-pat" style="color:#555;">not set</span></div>
   </div>
 
   <!-- Notepad Tab -->
@@ -167,9 +430,10 @@
       <button class="tb-btn" data-action="hr"         title="Horizontal rule">—</button>
       <button class="tb-btn" data-action="code-block" title="Code block">{}</button>
       <div class="sep"></div>
-      <button class="tb-btn" data-action="image"      title="Insert image">🖼</button>
+      <!-- Custom image insert — no native prompt -->
+      <button class="tb-btn" data-action="image"      title="Insert image" id="tb-img-btn">🖼</button>
       <button class="tb-btn" data-action="video"      title="Embed YouTube">▶</button>
-      <button class="tb-btn" data-action="link"       title="Insert link">🔗</button>
+      <button class="tb-btn" data-action="link"       title="Insert link" id="tb-link-btn">🔗</button>
       <div class="sep"></div>
       <button class="tb-btn wide" data-action="math-inline" title="Inline KaTeX" style="color:#00d8ff;">$x$</button>
       <button class="tb-btn wide" data-action="math-block"  title="Block KaTeX"  style="color:#00d8ff;">$$</button>
@@ -185,7 +449,7 @@
     </div>
   </div>
 
-  <!-- Files Tab -->
+  <!-- Files Tab — enhanced with hide/show, read, edit, delete -->
   <div class="tab-panel" id="tab-files">
     <div class="paste-toolbar" style="padding:10px 0;flex-wrap:wrap;gap:6px;">
       <span class="paste-title" id="admin-files-title">GitHub Directory Protocol</span>
@@ -194,17 +458,18 @@
         <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('')">CD /ROOT</button>
         <button class="btn btn-ghost btn-sm" onclick="adminNewFolder()">[ + FOLDER ]</button>
         <button class="btn btn-ghost btn-sm" onclick="adminNewFile()">[ + FILE ]</button>
+        <button class="btn btn-ghost btn-sm" id="toggle-hidden-btn" onclick="adminToggleShowHidden()" title="Show/Hide hidden files">[ SHOW HIDDEN ]</button>
       </div>
     </div>
     <div id="tab-files-list" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-      <div class="table-responsive" style="margin-top:0;border-top:none;flex:1;overflow-y:auto;">
-        <table class="gh-table" style="margin-top:0;">
+      <div class="admin-table-wrap">
+        <table class="gh-table" style="margin-top:0;min-width:560px;">
           <thead>
             <tr>
               <th>Target Name</th>
-              <th>Path Directive</th>
+              <th>Path</th>
               <th class="hide-mobile">Size</th>
-              <th>Cmd</th>
+              <th style="min-width:200px;">Commands</th>
             </tr>
           </thead>
           <tbody id="admin-files-body"></tbody>
@@ -223,29 +488,89 @@
     </div>
   </div>
 
-  <!-- Settings Tab -->
+  <!-- Settings Tab — now full customisation -->
   <div class="tab-panel" id="tab-settings">
-    <div style="padding:20px;max-width:500px;width:100%;overflow-y:auto;flex:1;">
-      <h3 style="font-size:13px;color:var(--accent);text-transform:uppercase;margin-bottom:8px;letter-spacing:.1em;">// HONEYPOT — TELEGRAM CONFIG</h3>
-      <p style="font-size:11px;color:var(--text-3);margin-bottom:20px;line-height:1.7;">
-        Credentials disimpan di <code style="color:var(--accent);">localStorage</code> browser ini saja.
-      </p>
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);margin-bottom:6px;">Bot Token</label>
-      <input type="password" id="settings-tg-token" placeholder="7123456789:AAHxxxxxxxx" autocomplete="off"
-             style="width:100%;padding:10px 12px;font-family:var(--mono);font-size:13px;border:1px solid var(--border-lt);background:#000;color:var(--accent);outline:none;margin-bottom:15px;" />
-      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);margin-bottom:6px;">Chat ID</label>
-      <input type="text" id="settings-tg-chat" placeholder="123456789" autocomplete="off"
-             style="width:100%;padding:10px 12px;font-family:var(--mono);font-size:13px;border:1px solid var(--border-lt);background:#000;color:var(--accent);outline:none;margin-bottom:15px;" />
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" id="settings-save-btn"  style="flex:1;">[ SAVE ]</button>
-        <button class="btn btn-ghost btn-sm"   id="settings-test-btn">[ TEST ALERT ]</button>
-        <button class="btn btn-danger btn-sm"  id="settings-clear-btn">[ WIPE ]</button>
+    <div style="padding:20px;max-width:600px;width:100%;overflow-y:auto;flex:1;box-sizing:border-box;">
+
+      <!-- Telegram / Honeypot -->
+      <div class="settings-section">
+        <h3>// Honeypot — Telegram Config</h3>
+        <p style="font-size:10px;color:#555;margin-bottom:16px;line-height:1.8;">Credentials disimpan di <code style="color:var(--accent);">localStorage</code>. Bot token & Chat ID diperlukan untuk notifikasi intruder.</p>
+        <label class="settings-label">Bot Token</label>
+        <input type="password" id="settings-tg-token" placeholder="7123456789:AAHxxxxxxxx" autocomplete="off" class="settings-input" />
+        <label class="settings-label">Chat ID</label>
+        <input type="text" id="settings-tg-chat" placeholder="123456789" autocomplete="off" class="settings-input" />
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="btn btn-primary btn-sm" id="settings-save-btn"  style="flex:1;min-width:80px;">[ SAVE ]</button>
+          <button class="btn btn-ghost btn-sm"   id="settings-test-btn">[ TEST ALERT ]</button>
+          <button class="btn btn-danger btn-sm"  id="settings-clear-btn">[ WIPE ]</button>
+        </div>
+        <div id="settings-status" style="font-size:10px;color:var(--accent);min-height:14px;text-transform:uppercase;letter-spacing:.05em;"></div>
       </div>
-      <div id="settings-status" style="font-size:11px;color:var(--accent);min-height:16px;margin-bottom:20px;text-transform:uppercase;letter-spacing:.05em;"></div>
-      <div style="padding-top:15px;border-top:1px dashed var(--border-lt);">
-        <p style="font-size:10px;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Current Telegram Status</p>
-        <div id="settings-tg-status" style="font-size:12px;color:var(--text-2);line-height:1.8;"></div>
+
+      <!-- GitHub PAT -->
+      <div class="settings-section">
+        <h3>// GitHub Integration</h3>
+        <p style="font-size:10px;color:#555;margin-bottom:8px;line-height:1.8;">
+          <span style="color:#ff6622;">⚠ Mengapa PAT tidak bisa dihapus?</span><br>
+          Firebase hanya menangani autentikasi user (siapa yang login). Untuk operasi <em>baca/tulis file</em> ke GitHub repository (push, create, delete), kamu butuh <strong>GitHub Personal Access Token (PAT)</strong>. Tanpa PAT, semua operasi file manager tidak bisa berjalan. PAT disimpan terenkripsi di localStorage, bukan dikirim ke server manapun.
+        </p>
+        <label class="settings-label">GitHub PAT (Personal Access Token)</label>
+        <input type="password" id="settings-pat" placeholder="ghp_••••••••••••" autocomplete="off" class="settings-input" />
+        <label class="settings-label">GitHub Username</label>
+        <input type="text" id="settings-gh-user" placeholder="0xrwise" autocomplete="off" class="settings-input" />
+        <label class="settings-label">GitHub Repo Name</label>
+        <input type="text" id="settings-gh-repo" placeholder="my-repo" autocomplete="off" class="settings-input" />
+        <button class="btn btn-primary btn-sm" id="settings-gh-save-btn">[ SAVE GITHUB CONFIG ]</button>
+        <div id="settings-gh-status" style="font-size:10px;color:var(--accent);margin-top:8px;min-height:14px;"></div>
       </div>
+
+      <!-- Site Branding / Customisation -->
+      <div class="settings-section">
+        <h3>// Site Branding &amp; Customisation</h3>
+
+        <label class="settings-label">Site Title (Browser Tab)</label>
+        <input type="text" id="brand-title" placeholder="0xrwise // TERMINAL" class="settings-input" />
+
+        <label class="settings-label">Site Tagline / Meta Description</label>
+        <input type="text" id="brand-tagline" placeholder="Secure digital knowledge base." class="settings-input" />
+
+        <div class="settings-row">
+          <div>
+            <label class="settings-label">OG / Twitter Image URL</label>
+            <input type="url" id="brand-og-img" placeholder="https://..." class="settings-input" oninput="previewOGImg(this.value)" />
+            <img id="og-preview-img" src="" alt="OG preview" />
+          </div>
+          <div>
+            <label class="settings-label">Favicon URL</label>
+            <input type="url" id="brand-favicon" placeholder="https://... or data:image/..." class="settings-input" oninput="previewFavicon(this.value)" />
+            <div id="favicon-preview-box">
+              <img id="favicon-preview-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" alt="favicon preview" />
+              <span style="font-size:10px;color:#555;">Current favicon (32×32)</span>
+            </div>
+          </div>
+        </div>
+
+        <label class="settings-label">Operator Photo URL (About panel)</label>
+        <input type="url" id="brand-avatar" placeholder="https://..." class="settings-input" />
+
+        <label class="settings-label">Operator Name</label>
+        <input type="text" id="brand-op-name" placeholder="Muhammad Rafi A." class="settings-input" />
+
+        <label class="settings-label">Operator Role</label>
+        <input type="text" id="brand-op-role" placeholder="Digital Student" class="settings-input" />
+
+        <button class="btn btn-primary btn-sm" id="brand-save-btn" style="margin-top:4px;">[ APPLY BRANDING ]</button>
+        <div id="brand-status" style="font-size:10px;color:var(--accent);margin-top:8px;min-height:14px;"></div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-section">
+        <h3 style="color:#ff4444;">// Danger Zone</h3>
+        <button class="btn btn-danger btn-sm" onclick="adminDangerClearStorage()">[ WIPE ALL STORED CONFIG ]</button>
+        <p style="font-size:10px;color:#555;margin-top:8px;">Menghapus PAT, Telegram config, dan branding dari localStorage.</p>
+      </div>
+
     </div>
   </div>
 </div>
@@ -254,7 +579,7 @@
      OVERLAYS / MODALS
 ══════════════════════════════════════════════════════════════ -->
 
-<!-- Login -->
+<!-- Login — no PAT field, uses Firebase only -->
 <div class="overlay" id="login-overlay">
   <div class="login-box">
     <h2>// ROOT_ACCESS_REQUIRED</h2>
@@ -263,11 +588,13 @@
     <input type="email"    id="username-input" placeholder="agent@0xrwise.com" autocomplete="off" />
     <label for="pw-input">Passphrase</label>
     <input type="password" id="pw-input"       placeholder="••••••••"          autocomplete="off" />
-    <label for="pat-input" style="color:var(--accent);">Auth Token (PAT)</label>
-    <input type="password" id="pat-input"      placeholder="ghp_••••••••••••" autocomplete="off" />
+    <!-- NOTE: PAT dipindah ke Settings tab. Login hanya via Firebase Auth. -->
     <div class="error" id="login-error"></div>
+    <div style="font-size:9px;color:#333;margin-top:8px;margin-bottom:16px;line-height:1.7;">
+      Auth via Firebase. GitHub PAT dapat dikonfigurasi setelah login di menu Settings.
+    </div>
     <div class="url-actions">
-      <button class="btn btn-ghost"   onclick="window.history.back()">Abort</button>
+      <button class="btn btn-ghost" onclick="closeLoginOverlay()">Abort</button>
       <button class="btn btn-primary" id="login-btn" style="width:auto;">Execute</button>
     </div>
   </div>
@@ -291,10 +618,15 @@
       <input type="password" id="pub-enc-key2" placeholder="Ulangi key..."      autocomplete="off" />
       <p style="font-size:10px;color:var(--danger);margin-bottom:10px;margin-top:-8px;">⚠ Key ini TIDAK disimpan di manapun.</p>
     </div>
-    <p style="font-size:10.5px;color:var(--text-3);margin-bottom:20px;">Warning: File .enc memerlukan passphrase untuk dibuka.</p>
+    <div class="checkbox-container" style="margin-top:4px;">
+      <input type="checkbox" id="pub-hidden" />
+      <span class="checkmark" style="border-color:#666;"></span>
+      <label for="pub-hidden" style="color:#888;">[ H ] Mark as Hidden (tidak tampil di public)</label>
+    </div>
+    <p style="font-size:10.5px;color:var(--text-3);margin-bottom:20px;margin-top:8px;">Warning: File .enc memerlukan passphrase untuk dibuka.</p>
     <div class="error" id="pub-error"></div>
     <div class="url-actions">
-      <button class="btn btn-ghost btn-sm"   onclick="window.history.back()">Abort</button>
+      <button class="btn btn-ghost btn-sm" onclick="closePublishOverlay()">Abort</button>
       <button class="btn btn-primary btn-sm" id="pub-ok">Confirm Push</button>
     </div>
   </div>
@@ -308,7 +640,7 @@
     <input type="password" id="decrypt-pw" placeholder="Enter Key..." />
     <div class="error" id="decrypt-error"></div>
     <div class="url-actions">
-      <button class="btn btn-ghost btn-sm"  onclick="window.history.back()">Cancel</button>
+      <button class="btn btn-ghost btn-sm"  onclick="closeDecryptOverlay()">Cancel</button>
       <button class="btn btn-danger btn-sm" id="decrypt-ok">Decrypt</button>
     </div>
   </div>
@@ -321,7 +653,7 @@
     <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
       <div style="flex-shrink:0;text-align:center;">
         <div style="width:90px;height:90px;border:2px solid var(--accent);box-shadow:var(--glow);overflow:hidden;position:relative;background:#000;">
-          <img src="https://i.ibb.co/xKYgN97k/ef264507-1f42-4123-b90a-862fb2fcce57.jpg" alt="Operator"
+          <img id="about-avatar-img" src="https://i.ibb.co/xKYgN97k/ef264507-1f42-4123-b90a-862fb2fcce57.jpg" alt="Operator"
                style="width:100%;height:100%;object-fit:cover;filter:grayscale(30%);"
                onerror="this.style.display='none'" />
         </div>
@@ -330,8 +662,8 @@
       <div style="flex:1;min-width:180px;">
         <div class="agent-tagline" id="about-tagline" style="font-size:11px;color:var(--accent);min-height:18px;display:block;margin-bottom:12px;"></div>
         <div style="font-size:12px;line-height:1.9;color:var(--text-2);">
-          <div><span style="color:var(--accent);">NAME</span>   : <span style="color:var(--text);">Muhammad Rafi A.</span></div>
-          <div><span style="color:var(--accent);">ROLE</span>   : <span style="color:var(--text);">Digital Student</span></div>
+          <div><span style="color:var(--accent);">NAME</span>   : <span id="about-name" style="color:var(--text);">Muhammad Rafi A.</span></div>
+          <div><span style="color:var(--accent);">ROLE</span>   : <span id="about-role" style="color:var(--text);">Digital Student</span></div>
           <div><span style="color:var(--accent);">STATUS</span> : <span style="color:#00ff41;">● ACTIVE</span></div>
           <div><span style="color:var(--accent);">GITHUB</span> : <a href="https://github.com/0xrwise" target="_blank" style="color:var(--text);border-bottom:1px dashed var(--accent);">github.com/0xrwise</a></div>
         </div>
@@ -341,7 +673,75 @@
       </div>
     </div>
     <div class="url-actions" style="margin-top:12px;">
-      <button class="btn btn-ghost btn-sm" onclick="window.history.back()">[ CLOSE ]</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeAboutOverlay()">[ CLOSE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CUSTOM MODAL: Image URL input (replaces native prompt)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="img-modal">
+  <div class="modal-box">
+    <h3>// Insert Image</h3>
+    <label>Image URL</label>
+    <input type="url" id="img-modal-url" placeholder="https://example.com/image.png" />
+    <label>Alt Text (optional)</label>
+    <input type="text" id="img-modal-alt" placeholder="image description" />
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeImgModal()">[ CANCEL ]</button>
+      <button class="btn-modal-ok"     onclick="confirmImgModal()">[ INSERT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM MODAL: Link input -->
+<div class="modal-overlay" id="link-modal">
+  <div class="modal-box">
+    <h3>// Insert Link</h3>
+    <label>URL</label>
+    <input type="url" id="link-modal-url" placeholder="https://example.com" />
+    <label>Link Text</label>
+    <input type="text" id="link-modal-text" placeholder="Click here" />
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeLinkModal()">[ CANCEL ]</button>
+      <button class="btn-modal-ok"     onclick="confirmLinkModal()">[ INSERT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM MODAL: Video embed -->
+<div class="modal-overlay" id="video-modal">
+  <div class="modal-box">
+    <h3>// Embed YouTube</h3>
+    <label>YouTube URL or Video ID</label>
+    <input type="text" id="video-modal-url" placeholder="https://youtube.com/watch?v=... or dQw4w9WgXcQ" />
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeVideoModal()">[ CANCEL ]</button>
+      <button class="btn-modal-ok"     onclick="confirmVideoModal()">[ INSERT ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM MODAL: Confirm delete -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <h3 style="color:#ff4444;">// Confirm Delete</h3>
+    <p id="confirm-modal-msg" style="font-size:12px;color:#999;margin-bottom:20px;line-height:1.8;"></p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeConfirmModal()">[ ABORT ]</button>
+      <button class="btn-modal-danger" id="confirm-modal-ok">[ CONFIRM DELETE ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM MODAL: Read file viewer -->
+<div class="modal-overlay" id="read-modal">
+  <div class="modal-box" style="width:min(700px,96vw);max-height:85vh;display:flex;flex-direction:column;">
+    <h3>// File Preview: <span id="read-modal-title" style="text-transform:none;color:#ccc;"></span></h3>
+    <pre id="read-modal-body" style="flex:1;overflow-y:auto;background:#000;border:1px solid #111;padding:12px;font-size:12px;color:#aaa;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-bottom:12px;"></pre>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeReadModal()">[ CLOSE ]</button>
     </div>
   </div>
 </div>
@@ -369,11 +769,12 @@
 <!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════════
-     SCRIPTS — urutan penting, jangan diubah
-══════════════════════════════════════════════════════════════ -->
+<!-- Secure hash status indicator (non-obvious) -->
+<div id="hash-status"></div>
 
-<!-- 1. Library eksternal -->
+<!-- ══════════════════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/lib/marked.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked-highlight@2.1.1/lib/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
@@ -382,18 +783,494 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-<!-- 2. Firebase (compat — tidak perlu bundler) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<!-- 3. Config (set window.CONFIG dan window.firebaseConfig) -->
+<!-- Config -->
 <script src="config.js"></script>
-
-<!-- 4. Honeypot (butuh window.CONFIG) -->
+<!-- Honeypot -->
 <script src="assets/honeypot.js"></script>
 
-<!-- 5. Main app (plain script, BUKAN type="module") -->
+<!-- ══════════════════════════════════════════════
+     SECURE ROUTING + MODAL UTILITIES
+     Replaces direct hash-based admin access
+══════════════════════════════════════════════ -->
+<script>
+/**
+ * SECURE ROUTING
+ * =============
+ * Hashes are obfuscated using a one-time session token.
+ * /admin and /login are never exposed in the URL bar.
+ * Instead, the URL shows encoded tokens like:
+ *   #s=a1b2c3d4  (session token for admin)
+ *   #s=e5f6a7b8  (session token for login)
+ *
+ * The ASCII logo click trick generates a session token
+ * client-side and navigates to the encoded URL.
+ */
+
+(function() {
+  'use strict';
+
+  // Generate cryptographically random session token
+  function genToken(len) {
+    const arr = new Uint8Array(len);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('').slice(0, len*2);
+  }
+
+  // Session-scoped route map (regenerated on every page load)
+  const _SESSION = genToken(8);
+  const _ROUTES = {};
+  function registerRoute(name) {
+    const tok = CryptoJS.MD5(_SESSION + name + navigator.userAgent.slice(0,20)).toString().slice(0,12);
+    _ROUTES[tok] = name;
+    _ROUTES[name] = tok; // reverse lookup
+    return tok;
+  }
+
+  // Wait for CryptoJS to load
+  window.addEventListener('DOMContentLoaded', () => {
+    window._ROUTE_LOGIN = registerRoute('__login__');
+    window._ROUTE_ADMIN = registerRoute('__admin__');
+    window._ROUTE_ABOUT = registerRoute('__about__');
+
+    // Override hash navigation
+    function routeTo(name) {
+      const tok = _ROUTES[name];
+      if (tok) window.location.hash = 's=' + tok;
+    }
+
+    window.showLogin = function() { routeTo('__login__'); };
+    window.showAbout = function() { routeTo('__about__'); };
+    window.showAdmin = function() { routeTo('__admin__'); };
+
+    window.closeLoginOverlay  = function() { window.location.hash = ''; };
+    window.closePublishOverlay= function() { history.back(); };
+    window.closeDecryptOverlay= function() { history.back(); };
+    window.closeAboutOverlay  = function() { window.location.hash = ''; };
+
+    // Patch the ascii-logo click to use secure route
+    const logo = document.getElementById('ascii-logo');
+    if (logo) {
+      let _clicks = 0, _timer;
+      logo.addEventListener('click', () => {
+        _clicks++;
+        clearTimeout(_timer);
+        _timer = setTimeout(() => { _clicks = 0; }, 3000);
+        if (_clicks >= 5) {
+          _clicks = 0;
+          routeTo('__login__');
+        }
+      });
+    }
+
+    // Hash router
+    function handleHash() {
+      const h = window.location.hash.replace('#','');
+      if (!h) {
+        // Default public view — handled by main.js
+        return;
+      }
+
+      // Secure token routing
+      if (h.startsWith('s=')) {
+        const tok = h.slice(2);
+        const route = _ROUTES[tok];
+        if (route === '__login__') {
+          document.getElementById('hash-status').textContent = '';
+          // Show login overlay — dispatched to main.js via event
+          document.dispatchEvent(new CustomEvent('route:login'));
+          return;
+        }
+        if (route === '__admin__') {
+          document.dispatchEvent(new CustomEvent('route:admin'));
+          return;
+        }
+        if (route === '__about__') {
+          document.dispatchEvent(new CustomEvent('route:about'));
+          return;
+        }
+        // Unknown token — redirect to home silently
+        window.location.hash = '';
+        return;
+      }
+
+      // File viewer routing (public) — forwarded to main.js
+      document.dispatchEvent(new CustomEvent('route:hash', { detail: h }));
+    }
+
+    window.addEventListener('hashchange', handleHash);
+    handleHash(); // initial
+  });
+
+})();
+
+/* ─── Custom Modal Utilities ──────────────────── */
+
+// Image modal
+function openImgModal() {
+  document.getElementById('img-modal-url').value = '';
+  document.getElementById('img-modal-alt').value = '';
+  document.getElementById('img-modal').classList.add('active');
+  setTimeout(() => document.getElementById('img-modal-url').focus(), 50);
+}
+function closeImgModal() {
+  document.getElementById('img-modal').classList.remove('active');
+}
+function confirmImgModal() {
+  const url = document.getElementById('img-modal-url').value.trim();
+  const alt = document.getElementById('img-modal-alt').value.trim() || 'image';
+  if (!url) { closeImgModal(); return; }
+  const md = `![${alt}](${url})`;
+  insertAtCursor(document.getElementById('md-input'), md);
+  closeImgModal();
+}
+
+// Link modal
+function openLinkModal() {
+  document.getElementById('link-modal-url').value = '';
+  document.getElementById('link-modal-text').value = '';
+  document.getElementById('link-modal').classList.add('active');
+  setTimeout(() => document.getElementById('link-modal-url').focus(), 50);
+}
+function closeLinkModal() {
+  document.getElementById('link-modal').classList.remove('active');
+}
+function confirmLinkModal() {
+  const url  = document.getElementById('link-modal-url').value.trim();
+  const text = document.getElementById('link-modal-text').value.trim() || url;
+  if (!url) { closeLinkModal(); return; }
+  insertAtCursor(document.getElementById('md-input'), `[${text}](${url})`);
+  closeLinkModal();
+}
+
+// Video modal
+function openVideoModal() {
+  document.getElementById('video-modal-url').value = '';
+  document.getElementById('video-modal').classList.add('active');
+  setTimeout(() => document.getElementById('video-modal-url').focus(), 50);
+}
+function closeVideoModal() {
+  document.getElementById('video-modal').classList.remove('active');
+}
+function confirmVideoModal() {
+  let val = document.getElementById('video-modal-url').value.trim();
+  if (!val) { closeVideoModal(); return; }
+  // Extract video ID
+  let vid = val;
+  const m = val.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (m) vid = m[1];
+  const md = `\n<iframe width="560" height="315" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen></iframe>\n`;
+  insertAtCursor(document.getElementById('md-input'), md);
+  closeVideoModal();
+}
+
+// Confirm / delete modal
+let _confirmCallback = null;
+function openConfirmModal(msg, cb) {
+  document.getElementById('confirm-modal-msg').textContent = msg;
+  _confirmCallback = cb;
+  document.getElementById('confirm-modal').classList.add('active');
+}
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('active');
+  _confirmCallback = null;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('confirm-modal-ok').onclick = function() {
+    closeConfirmModal();
+    if (_confirmCallback) _confirmCallback();
+  };
+});
+
+// Read modal
+function openReadModal(title, content) {
+  document.getElementById('read-modal-title').textContent = title;
+  document.getElementById('read-modal-body').textContent  = content;
+  document.getElementById('read-modal').classList.add('active');
+}
+function closeReadModal() {
+  document.getElementById('read-modal').classList.remove('active');
+}
+
+// Helper: insert text at cursor in textarea
+function insertAtCursor(ta, text) {
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0,s) + text + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
+  ta.focus();
+  ta.dispatchEvent(new Event('input'));
+}
+
+// Intercept toolbar buttons to use custom modals
+document.addEventListener('DOMContentLoaded', () => {
+  const imgBtn  = document.getElementById('tb-img-btn');
+  const linkBtn = document.getElementById('tb-link-btn');
+  if (imgBtn)  imgBtn.addEventListener('click', (e) => { e.stopPropagation(); openImgModal(); });
+  if (linkBtn) linkBtn.addEventListener('click', (e) => { e.stopPropagation(); openLinkModal(); });
+
+  // Video button — find by data-action
+  document.querySelectorAll('.tb-btn[data-action="video"]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openVideoModal(); });
+  });
+});
+
+/* ─── Branding / Customisation ───────────────── */
+
+function previewOGImg(url) {
+  const img = document.getElementById('og-preview-img');
+  if (url) { img.src = url; img.style.display = 'block'; }
+  else      { img.style.display = 'none'; }
+}
+function previewFavicon(url) {
+  const img = document.getElementById('favicon-preview-img');
+  if (url) img.src = url;
+}
+
+function applyBranding(data) {
+  if (!data) return;
+  if (data.title) {
+    document.title = data.title;
+    document.getElementById('meta-title') && (document.getElementById('meta-title').textContent = data.title);
+    const og = document.getElementById('og-title');
+    if (og) og.setAttribute('content', data.title);
+  }
+  if (data.tagline) {
+    const d = document.getElementById('meta-desc'); if (d) d.setAttribute('content', data.tagline);
+    const o = document.getElementById('og-desc');   if (o) o.setAttribute('content', data.tagline);
+  }
+  if (data.ogImg) {
+    const o = document.getElementById('og-image'); if (o) o.setAttribute('content', data.ogImg);
+  }
+  if (data.favicon) {
+    const link = document.getElementById('favicon-link');
+    if (link) link.href = data.favicon;
+    const prev = document.getElementById('favicon-preview-img');
+    if (prev) prev.src = data.favicon;
+  }
+  if (data.avatar) {
+    const img = document.getElementById('about-avatar-img');
+    if (img) img.src = data.avatar;
+  }
+  if (data.opName) {
+    const n = document.getElementById('about-name'); if (n) n.textContent = data.opName;
+  }
+  if (data.opRole) {
+    const r = document.getElementById('about-role'); if (r) r.textContent = data.opRole;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Load stored branding
+  try {
+    const b = JSON.parse(localStorage.getItem('__brand__') || '{}');
+    applyBranding(b);
+    if (b.title)   document.getElementById('brand-title').value   = b.title;
+    if (b.tagline) document.getElementById('brand-tagline').value = b.tagline;
+    if (b.ogImg)   { document.getElementById('brand-og-img').value = b.ogImg; previewOGImg(b.ogImg); }
+    if (b.favicon) { document.getElementById('brand-favicon').value = b.favicon; previewFavicon(b.favicon); }
+    if (b.avatar)  document.getElementById('brand-avatar').value  = b.avatar;
+    if (b.opName)  document.getElementById('brand-op-name').value = b.opName;
+    if (b.opRole)  document.getElementById('brand-op-role').value = b.opRole;
+  } catch(e) {}
+
+  document.getElementById('brand-save-btn').onclick = function() {
+    const data = {
+      title:   document.getElementById('brand-title').value.trim(),
+      tagline: document.getElementById('brand-tagline').value.trim(),
+      ogImg:   document.getElementById('brand-og-img').value.trim(),
+      favicon: document.getElementById('brand-favicon').value.trim(),
+      avatar:  document.getElementById('brand-avatar').value.trim(),
+      opName:  document.getElementById('brand-op-name').value.trim(),
+      opRole:  document.getElementById('brand-op-role').value.trim(),
+    };
+    localStorage.setItem('__brand__', JSON.stringify(data));
+    applyBranding(data);
+    document.getElementById('brand-status').textContent = '✓ Branding applied & saved.';
+    setTimeout(() => document.getElementById('brand-status').textContent = '', 3000);
+  };
+
+  // Load PAT/GH config into settings fields
+  try {
+    const pat  = localStorage.getItem('__gh_pat__')  || '';
+    const user = localStorage.getItem('__gh_user__') || '';
+    const repo = localStorage.getItem('__gh_repo__') || '';
+    if (pat)  document.getElementById('settings-pat').value     = pat;
+    if (user) document.getElementById('settings-gh-user').value = user;
+    if (repo) document.getElementById('settings-gh-repo').value = repo;
+    document.getElementById('stat-pat').textContent = pat ? '✓ set' : 'not set';
+    document.getElementById('stat-pat').style.color = pat ? 'var(--accent)' : '#555';
+  } catch(e) {}
+
+  document.getElementById('settings-gh-save-btn').onclick = function() {
+    const pat  = document.getElementById('settings-pat').value.trim();
+    const user = document.getElementById('settings-gh-user').value.trim();
+    const repo = document.getElementById('settings-gh-repo').value.trim();
+    if (pat)  localStorage.setItem('__gh_pat__',  pat);
+    if (user) localStorage.setItem('__gh_user__', user);
+    if (repo) localStorage.setItem('__gh_repo__', repo);
+    document.getElementById('settings-gh-status').textContent = '✓ GitHub config saved.';
+    document.getElementById('stat-pat').textContent = pat ? '✓ set' : 'not set';
+    document.getElementById('stat-pat').style.color = pat ? 'var(--accent)' : '#555';
+    setTimeout(() => document.getElementById('settings-gh-status').textContent = '', 3000);
+  };
+
+  // Danger: wipe all
+  window.adminDangerClearStorage = function() {
+    openConfirmModal('Hapus semua config dari localStorage? (PAT, Telegram, Branding)', () => {
+      ['__gh_pat__','__gh_user__','__gh_repo__','__brand__','__tg_token__','__tg_chat__'].forEach(k => localStorage.removeItem(k));
+      location.reload();
+    });
+  };
+
+  // Session timer
+  const _start = Date.now();
+  setInterval(() => {
+    const elapsed = Math.floor((Date.now() - _start)/1000);
+    const m = Math.floor(elapsed/60).toString().padStart(2,'0');
+    const s = (elapsed%60).toString().padStart(2,'0');
+    const el = document.getElementById('stat-session');
+    if (el) el.textContent = m + ':' + s;
+  }, 1000);
+});
+
+/* ─── Admin: hide/show files ─────────────────── */
+window._showHiddenFiles = false;
+window.adminToggleShowHidden = function() {
+  window._showHiddenFiles = !window._showHiddenFiles;
+  const btn = document.getElementById('toggle-hidden-btn');
+  if (btn) btn.textContent = window._showHiddenFiles ? '[ HIDE HIDDEN ]' : '[ SHOW HIDDEN ]';
+  // Re-render file list
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+};
+
+// Hidden file list (stored in localStorage as JSON array of paths)
+function getHiddenList() {
+  try { return JSON.parse(localStorage.getItem('__hidden_files__') || '[]'); } catch(e) { return []; }
+}
+function saveHiddenList(list) {
+  localStorage.setItem('__hidden_files__', JSON.stringify(list));
+}
+window.adminHideFile = function(path) {
+  const list = getHiddenList();
+  if (!list.includes(path)) { list.push(path); saveHiddenList(list); }
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+  showToastMsg('File hidden from public listing.');
+};
+window.adminUnhideFile = function(path) {
+  const list = getHiddenList().filter(p => p !== path);
+  saveHiddenList(list);
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+  showToastMsg('File visible in public listing.');
+};
+window.isFileHidden = function(path) {
+  return getHiddenList().includes(path);
+};
+
+// Admin read file
+window.adminReadFile = async function(path, name) {
+  try {
+    const pat  = localStorage.getItem('__gh_pat__')  || (window.CONFIG && window.CONFIG.ghPat)  || '';
+    const user = localStorage.getItem('__gh_user__') || (window.CONFIG && window.CONFIG.ghUser) || '';
+    const repo = localStorage.getItem('__gh_repo__') || (window.CONFIG && window.CONFIG.ghRepo) || '';
+    const url  = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
+    const res  = await fetch(url, { headers: { Authorization: 'token ' + pat, Accept: 'application/vnd.github.v3+json' }});
+    const data = await res.json();
+    const content = atob(data.content.replace(/\n/g,''));
+    openReadModal(name, content);
+  } catch(e) {
+    openReadModal(name, 'ERROR: ' + e.message);
+  }
+};
+
+// Render admin files with extra action buttons
+window.renderAdminFiles = function(files) {
+  window._lastFileData = files;
+  const tbody = document.getElementById('admin-files-body');
+  if (!tbody) return;
+  const hiddenList = getHiddenList();
+  let html = '';
+  let hiddenCount = 0;
+
+  files.forEach(f => {
+    const hidden = hiddenList.includes(f.path);
+    if (hidden) hiddenCount++;
+    if (hidden && !window._showHiddenFiles) return;
+
+    const isDir  = f.type === 'dir';
+    const badge  = hidden ? '<span class="badge badge-hidden">HIDDEN</span>' : '<span class="badge badge-pub">PUB</span>';
+    const encBadge = f.name.endsWith('.enc') ? '<span class="badge badge-enc">ENC</span>' : '';
+    const rowClass = hidden ? 'class="row-hidden"' : '';
+
+    html += `<tr ${rowClass}>
+      <td style="word-break:break-all;">${isDir ? '📁 ' : '📄 '}<strong>${f.name}</strong>${badge}${encBadge}</td>
+      <td style="font-size:10px;color:#555;word-break:break-all;">${f.path}</td>
+      <td class="hide-mobile" style="font-size:10px;color:#555;">${f.size ? (f.size > 1024 ? (f.size/1024).toFixed(1)+'K' : f.size+'B') : '—'}</td>
+      <td>
+        <div class="file-actions">
+          ${isDir ? `<button onclick="loadGitHubFilesAdmin('${f.path}')">[ CD ]</button>` : `
+          <button onclick="adminReadFile('${f.path}','${f.name}')">[ READ ]</button>
+          <button onclick="adminEditFile('${f.path}','${f.name}')">[ EDIT ]</button>
+          `}
+          ${hidden
+            ? `<button onclick="adminUnhideFile('${f.path}')">[ SHOW ]</button>`
+            : `<button onclick="adminHideFile('${f.path}')">[ HIDE ]</button>`
+          }
+          <button class="danger" onclick="adminDeleteFileConfirm('${f.path}','${f.name}')">[ DEL ]</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = html || '<tr><td colspan="4" style="color:#444;font-size:11px;">No files in this directory.</td></tr>';
+
+  // Update stats
+  const st = document.getElementById('stat-files');   if (st) st.textContent = files.length;
+  const sh = document.getElementById('stat-hidden');  if (sh) sh.textContent = hiddenCount;
+  const sr = document.getElementById('stat-repo');    if (sr) {
+    const user = localStorage.getItem('__gh_user__') || '?';
+    const repo = localStorage.getItem('__gh_repo__') || '?';
+    sr.textContent = user + '/' + repo;
+  }
+};
+
+// Delete with confirm modal
+window.adminDeleteFileConfirm = function(path, name) {
+  openConfirmModal(`Delete file: ${name}\nPath: ${path}\n\nThis action cannot be undone.`, () => {
+    if (typeof adminDeleteFile === 'function') adminDeleteFile(path, name);
+  });
+};
+
+// Toast helper (may already exist in main.js)
+window.showToastMsg = function(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+};
+
+// Overlay close on ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+  }
+});
+
+// Close modal on backdrop click
+document.querySelectorAll && document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('active');
+    });
+  });
+});
+</script>
+
+<!-- Main app -->
 <script src="main.js"></script>
 
 </body>
