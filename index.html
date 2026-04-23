@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title id="meta-title">0xrwise // TERMINAL</title>
 
-  <!-- Dynamic favicon placeholder -->
   <link rel="icon" type="image/svg+xml" id="favicon-link" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" />
 
-  <!-- OG / Twitter meta (dynamically updated via JS) -->
   <meta property="og:type"        content="website" />
   <meta property="og:site_name"   id="og-site-name"  content="0xrwise // TERMINAL" />
   <meta property="og:title"       id="og-title"       content="0xrwise // TERMINAL" />
@@ -27,25 +25,40 @@
 
   <style>
     /* ════════════════════════════════════════════
-       CUSTOM IMAGE DIALOG — replaces native prompt
+       GLOBAL RESET & BOX MODEL
+       ════════════════════════════════════════════ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0; padding: 0;
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    /* ════════════════════════════════════════════
+       CUSTOM IMAGE DIALOG
        ════════════════════════════════════════════ */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.88);
       backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
+      padding: 12px;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
       background: #060606;
       border: 1px solid var(--accent, #00ff41);
       box-shadow: 0 0 30px rgba(0,255,65,0.15), 0 0 60px rgba(0,255,65,0.05);
-      padding: 28px 24px 20px;
-      width: min(420px, 92vw);
+      padding: 22px 18px 16px;
+      width: 100%;
+      max-width: 420px;
       font-family: 'JetBrains Mono', monospace;
       position: relative;
       animation: modalIn 0.18s ease;
@@ -59,7 +72,7 @@
       letter-spacing: .15em;
       text-transform: uppercase;
       color: var(--accent, #00ff41);
-      margin-bottom: 14px;
+      margin: 0 0 14px;
     }
     .modal-box label {
       display: block;
@@ -67,7 +80,7 @@
       letter-spacing: .1em;
       color: #888;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     .modal-box input[type="text"],
     .modal-box input[type="url"],
@@ -77,15 +90,14 @@
     .modal-box textarea,
     .modal-box select {
       width: 100%;
-      box-sizing: border-box;
       background: #000;
       border: 1px solid #2a2a2a;
       color: var(--accent, #00ff41);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      padding: 8px 10px;
+      font-size: 13px;
+      padding: 9px 10px;
       outline: none;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       transition: border-color .2s;
     }
     .modal-box input:focus,
@@ -102,10 +114,11 @@
       color: #888;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      padding: 7px 14px;
+      padding: 8px 14px;
       cursor: pointer;
       letter-spacing: .05em;
       transition: border-color .2s, color .2s;
+      min-height: 36px;
     }
     .btn-modal-cancel:hover { border-color: #666; color: #ccc; }
     .btn-modal-ok {
@@ -115,10 +128,11 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 700;
-      padding: 7px 18px;
+      padding: 8px 18px;
       cursor: pointer;
       letter-spacing: .05em;
       transition: opacity .2s;
+      min-height: 36px;
     }
     .btn-modal-ok:hover { opacity: .85; }
     .btn-modal-danger {
@@ -128,67 +142,286 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 700;
-      padding: 7px 18px;
+      padding: 8px 18px;
       cursor: pointer;
       letter-spacing: .05em;
+      min-height: 36px;
     }
 
     /* ════════════════════════════════════════════
-       ADMIN FEATURE ENHANCEMENTS
+       ICON / SYMBOL BUTTONS — replaces text labels
        ════════════════════════════════════════════ */
-
-    /* File table badges */
-    .badge {
-      display: inline-block;
-      font-size: 9px;
-      letter-spacing: .08em;
-      padding: 2px 6px;
-      border-radius: 0;
-      text-transform: uppercase;
-      font-weight: 700;
-      vertical-align: middle;
-      margin-left: 6px;
-    }
-    .badge-hidden { background: #1a1a1a; color: #666; border: 1px solid #333; }
-    .badge-enc    { background: rgba(255,30,30,.15); color: #ff4444; border: 1px solid #ff222244; }
-    .badge-pub    { background: rgba(0,255,65,.08);  color: #00ff41; border: 1px solid #00ff4122; }
-
-    /* Admin file action buttons */
-    .file-actions { display: flex; gap: 4px; flex-wrap: nowrap; }
-    .file-actions button {
+    .sym-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: transparent;
-      border: 1px solid #222;
-      color: #888;
+      border: 1px solid #2a2a2a;
+      color: var(--accent, #00ff41);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
-      padding: 3px 6px;
+      font-size: 15px;
+      line-height: 1;
+      width: 34px;
+      height: 34px;
       cursor: pointer;
-      letter-spacing: .05em;
-      transition: all .15s;
+      transition: border-color .15s, background .15s, color .15s;
+      flex-shrink: 0;
+      padding: 0;
+      border-radius: 0;
+    }
+    .sym-btn:hover { border-color: var(--accent, #00ff41); background: rgba(0,255,65,.07); }
+    .sym-btn.danger:hover { border-color: #ff4444; color: #ff4444; }
+    .sym-btn.sm { width: 28px; height: 28px; font-size: 13px; }
+    .sym-btn[title] { position: relative; }
+
+    /* ════════════════════════════════════════════
+       VIEWER NAV — responsive symbol bar
+       ════════════════════════════════════════════ */
+    .viewer-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      height: 44px;
+      background: #080808;
+      border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .viewer-nav .vn-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 11px;
+      color: #555;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: .08em;
+    }
+    .viewer-nav .vn-title span {
+      color: var(--accent, #00ff41);
+      text-shadow: var(--glow-text, 0 0 8px #00ff41);
+    }
+    .viewer-nav .vn-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Share bar */
+    #viewer-share-bar {
+      display: none;
+      padding: 6px 10px;
+      background: #060606;
+      border-bottom: 1px solid var(--accent, #00ff41);
+      flex-shrink: 0;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    #viewer-share-bar span {
+      color: #555;
+      font-size: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    #viewer-share-url {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      border: 1px solid #222;
+      background: #000;
+      color: var(--accent, #00ff41);
+      outline: none;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .file-actions button:hover { border-color: var(--accent, #00ff41); color: var(--accent, #00ff41); }
-    .file-actions button.danger:hover { border-color: #ff4444; color: #ff4444; }
 
-    /* Admin sidebar stats */
+    /* ════════════════════════════════════════════
+       ADMIN BAR & TABS — responsive
+       ════════════════════════════════════════════ */
+    .admin-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      background: #050505;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .admin-bar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+    .admin-tabs {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      border-top: 1px solid #111;
+    }
+    .admin-tabs::-webkit-scrollbar { display: none; }
+    .admin-tab {
+      font-size: 10px;
+      padding: 9px 14px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: .1em;
+    }
+    /* Push settings + logout to end */
+    .admin-tab-end {
+      margin-left: auto;
+    }
+
+    /* ════════════════════════════════════════════
+       ADMIN STAT BAR
+       ════════════════════════════════════════════ */
     .admin-stat-bar {
       display: flex;
-      gap: 16px;
-      padding: 8px 16px;
+      gap: 10px;
+      padding: 5px 12px;
       background: #040404;
       border-bottom: 1px solid #111;
       flex-shrink: 0;
       flex-wrap: wrap;
       font-size: 10px;
-      color: #555;
-      letter-spacing: .08em;
+      color: #444;
+      letter-spacing: .06em;
+      align-items: center;
     }
     .admin-stat-bar span { color: var(--accent, #00ff41); }
+    .admin-stat-bar .stat-pat { margin-left: auto; }
 
-    /* Settings sections */
+    /* ════════════════════════════════════════════
+       FILE TABLE — no overflow, responsive
+       ════════════════════════════════════════════ */
+    .admin-table-wrap {
+      flex: 1;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .gh-table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+    }
+    .gh-table th, .gh-table td {
+      padding: 7px 8px;
+      font-size: 11px;
+      text-align: left;
+      border-bottom: 1px solid #111;
+      vertical-align: middle;
+    }
+    .gh-table th {
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #444;
+      background: #050505;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    /* Column widths */
+    .gh-table .col-name  { width: 40%; min-width: 120px; word-break: break-word; }
+    .gh-table .col-path  { width: 25%; min-width: 80px; word-break: break-all; font-size: 10px; color: #444; }
+    .gh-table .col-size  { width: 10%; min-width: 50px; font-size: 10px; color: #444; }
+    .gh-table .col-cmd   { width: 25%; min-width: 110px; }
+
+    /* File action buttons — symbol style */
+    .file-actions {
+      display: flex;
+      gap: 3px;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      font-size: 8px;
+      letter-spacing: .06em;
+      padding: 1px 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .badge-hidden { background: #1a1a1a; color: #555; border: 1px solid #2a2a2a; }
+    .badge-enc    { background: rgba(255,30,30,.15); color: #ff4444; border: 1px solid #ff222244; }
+    .badge-pub    { background: rgba(0,255,65,.08);  color: #00ff41; border: 1px solid #00ff4122; }
+    .row-hidden   { opacity: 0.38; }
+
+    /* ════════════════════════════════════════════
+       PASTE / EDITOR TOOLBAR — responsive
+       ════════════════════════════════════════════ */
+    .paste-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #060606;
+      border-bottom: 1px solid #111;
+      flex-shrink: 0;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    .paste-title {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 5px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      background: #060606;
+      border-bottom: 1px solid #111;
+      flex-shrink: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 2px;
+      flex-wrap: nowrap;
+    }
+    .editor-toolbar::-webkit-scrollbar { display: none; }
+
+    /* Toolbar file actions responsive */
+    #tab-files .paste-toolbar {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    #tab-files .paste-toolbar .toolbar-actions {
+      flex-wrap: wrap;
+    }
+
+    /* ════════════════════════════════════════════
+       SETTINGS — responsive grid
+       ════════════════════════════════════════════ */
     .settings-section {
-      margin-bottom: 28px;
-      padding-bottom: 20px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
       border-bottom: 1px dashed #1a1a1a;
     }
     .settings-section:last-child { border-bottom: none; }
@@ -197,25 +430,26 @@
       letter-spacing: .15em;
       text-transform: uppercase;
       color: var(--accent, #00ff41);
-      margin-bottom: 14px;
+      margin: 0 0 12px;
     }
     .settings-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
     }
-    @media (max-width: 500px) { .settings-row { grid-template-columns: 1fr; } }
+    @media (max-width: 540px) {
+      .settings-row { grid-template-columns: 1fr; }
+    }
     .settings-label {
       display: block;
       font-size: 10px;
-      color: #666;
+      color: #555;
       text-transform: uppercase;
       letter-spacing: .08em;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
     .settings-input {
       width: 100%;
-      box-sizing: border-box;
       background: #000;
       border: 1px solid #1e1e1e;
       color: var(--accent, #00ff41);
@@ -223,7 +457,7 @@
       font-size: 12px;
       padding: 8px 10px;
       outline: none;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       transition: border-color .2s;
     }
     .settings-input:focus { border-color: var(--accent, #00ff41); }
@@ -232,10 +466,10 @@
     #favicon-preview-box {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px;
-      border: 1px dashed #222;
-      margin-bottom: 12px;
+      gap: 10px;
+      padding: 8px;
+      border: 1px dashed #1e1e1e;
+      margin-bottom: 10px;
     }
     #favicon-preview-img {
       width: 32px; height: 32px;
@@ -243,40 +477,211 @@
       object-fit: contain;
       background: #000;
       image-rendering: pixelated;
+      flex-shrink: 0;
     }
     #og-preview-img {
       width: 100%;
-      max-height: 120px;
+      max-height: 100px;
       object-fit: cover;
       border: 1px solid #222;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: none;
     }
 
-    /* Hide-file toggle in file list */
-    .row-hidden { opacity: 0.35; }
-
-    /* Improved responsive table */
-    .admin-table-wrap { overflow-x: auto; flex: 1; }
-    .gh-table { min-width: 500px; }
-
-    /* Secure hash status */
+    /* ════════════════════════════════════════════
+       HASH STATUS
+       ════════════════════════════════════════════ */
     #hash-status {
       position: fixed;
-      bottom: 12px;
-      right: 12px;
+      bottom: 10px;
+      right: 10px;
       font-size: 9px;
-      color: #2a2a2a;
+      color: #1e1e1e;
       font-family: 'JetBrains Mono', monospace;
       letter-spacing: .05em;
       z-index: 10;
       pointer-events: none;
     }
 
-    /* Mobile nav improvements */
-    @media (max-width: 480px) {
-      .admin-tabs { gap: 0; overflow-x: auto; }
-      .admin-tab  { font-size: 10px; padding: 8px 10px; white-space: nowrap; flex-shrink: 0; }
+    /* ════════════════════════════════════════════
+       PUBLIC NAV — responsive
+       ════════════════════════════════════════════ */
+    .pub-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      height: 42px;
+      background: #080808;
+      border-bottom: 1px solid var(--border-lt, #111);
+      flex-shrink: 0;
+      gap: 6px;
+    }
+    .pub-nav .brand-link {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent, #00ff41);
+      letter-spacing: .1em;
+      white-space: nowrap;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+    .pub-nav .nav-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .pub-nav .nav-icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent, #00ff41);
+      font-size: 17px;
+      cursor: pointer;
+      padding: 6px 7px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      transition: color .15s;
+      min-width: 34px;
+      justify-content: center;
+    }
+    .pub-nav .nav-icon-btn:hover { color: #fff; }
+    .pub-nav .crt-btn {
+      background: transparent;
+      border: none;
+      color: #444;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 6px 5px;
+      letter-spacing: .05em;
+      font-family: var(--mono, monospace);
+      transition: color .15s;
+    }
+    .pub-nav .crt-btn:hover { color: var(--accent, #00ff41); }
+
+    /* Search bar — no overflow */
+    #search-bar {
+      display: none;
+      padding: 7px 10px;
+      background: #060606;
+      border-bottom: 1px solid #111;
+      flex-shrink: 0;
+    }
+    .search-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      width: 100%;
+    }
+    .search-prompt {
+      color: var(--accent, #00ff41);
+      font-size: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: monospace;
+    }
+    #search-input {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      font-family: var(--mono, monospace);
+      font-size: 13px;
+      border: 1px solid #1e1e1e;
+      background: #000;
+      color: var(--accent, #00ff41);
+      outline: none;
+    }
+    #search-results {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-2, #888);
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    /* ════════════════════════════════════════════
+       INLINE EDIT PANEL
+       ════════════════════════════════════════════ */
+    #inline-edit-panel .edit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #080808;
+      border-bottom: 1px solid var(--accent, #00ff41);
+      flex-shrink: 0;
+      gap: 8px;
+    }
+    #inline-edit-title {
+      font-size: 11px;
+      color: var(--accent, #00ff41);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .edit-header-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+    /* ════════════════════════════════════════════
+       TOOLTIP on symbol buttons
+       ════════════════════════════════════════════ */
+    [data-tip] {
+      position: relative;
+    }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      border: 1px solid #333;
+      color: #aaa;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      padding: 3px 7px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      letter-spacing: .05em;
+      z-index: 100;
+    }
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ════════════════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+       ════════════════════════════════════════════ */
+
+    /* Hide path column on small screens */
+    @media (max-width: 540px) {
+      .gh-table .col-path { display: none; }
+      .gh-table .col-size { display: none; }
+      .gh-table .col-name { width: 65%; }
+      .gh-table .col-cmd  { width: 35%; }
+      .admin-stat-bar .hide-sm { display: none; }
+    }
+
+    @media (max-width: 400px) {
+      .pub-nav .brand-link { font-size: 10px; }
+    }
+
+    /* Inline-edit responsive */
+    #inline-edit-area {
+      flex: 1;
+      width: 100%;
+      resize: none;
+      background: #020202;
+      border: none;
+      color: var(--accent, #00ff41);
+      font-size: 13px;
+      padding: 14px;
+      outline: none;
+      font-family: var(--mono, monospace);
+      line-height: 1.7;
     }
   </style>
 </head>
@@ -286,26 +691,33 @@
      PUBLIC PAGE
 ══════════════════════════════════════════════════════════════ -->
 <div id="public-page">
-  <nav style="display:flex;align-items:center;justify-content:space-between;padding:0 15px;height:42px;background:#080808;border-bottom:1px solid var(--border-lt);flex-shrink:0;" aria-label="Main navigation">
-    <span style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.1em;white-space:nowrap;cursor:pointer;"
-          onclick="loadPublicDirectory('');window.location.hash=''" role="link" aria-label="Go to home directory">
-      0XRWISE <span style="color:var(--text-3);">// PUBLIC</span>
+  <!-- Responsive Nav -->
+  <nav class="pub-nav" aria-label="Main navigation">
+    <span class="brand-link"
+          onclick="loadPublicDirectory('');window.location.hash=''"
+          role="link" aria-label="Go to home directory">
+      0XRWISE <span style="color:var(--text-3,#444);">// PUBLIC</span>
     </span>
-    <div style="display:flex;gap:2px;align-items:center;">
-      <button title="Home"   aria-label="Home" onclick="loadPublicDirectory('');window.location.hash=''" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌂</button>
-      <button title="Search" aria-label="Search" id="nav-search-btn" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⌕</button>
-      <button title="About"  aria-label="About"  onclick="showAbout()" style="background:transparent;border:none;color:var(--accent);font-size:16px;cursor:pointer;padding:6px 8px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">⊙</button>
-      <button title="Toggle CRT" aria-label="Toggle CRT scanline" id="crt-toggle-btn" style="background:transparent;border:none;color:var(--text-3);font-size:11px;cursor:pointer;padding:6px 8px;letter-spacing:.05em;font-family:var(--mono);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-3)'">CRT</button>
+    <div class="nav-actions">
+      <button class="nav-icon-btn" title="Home"   aria-label="Home"
+              onclick="loadPublicDirectory('');window.location.hash=''">⌂</button>
+      <button class="nav-icon-btn" title="Search" aria-label="Search"
+              id="nav-search-btn">⌕</button>
+      <button class="nav-icon-btn" title="About"  aria-label="About"
+              onclick="showAbout()">⊙</button>
+      <button class="crt-btn" aria-label="Toggle CRT scanline"
+              id="crt-toggle-btn">CRT</button>
     </div>
   </nav>
 
-  <div id="search-bar" style="display:none;padding:8px 15px;background:#060606;border-bottom:1px solid var(--border-lt);flex-shrink:0;">
-    <div style="display:flex;gap:8px;align-items:center;width:100%;">
-      <span style="color:var(--accent);font-size:11px;white-space:nowrap;flex-shrink:0;">SEARCH:~$</span>
-      <input type="text" id="search-input" placeholder="scan files..." style="flex:1;min-width:0;padding:6px 10px;font-family:var(--mono);font-size:12px;border:1px solid var(--border-lt);background:#000;color:var(--accent);outline:none;height:32px;" />
-      <button class="btn btn-ghost btn-sm" id="search-close-btn" style="flex-shrink:0;height:32px;padding:0 10px;">ESC</button>
+  <!-- Search bar -->
+  <div id="search-bar">
+    <div class="search-row">
+      <span class="search-prompt">~$</span>
+      <input type="text" id="search-input" placeholder="scan files..." autocomplete="off" />
+      <button class="sym-btn sm" id="search-close-btn" title="Close" data-tip="Close">✕</button>
     </div>
-    <div id="search-results" style="margin-top:8px;font-size:12px;color:var(--text-2);max-height:200px;overflow-y:auto;"></div>
+    <div id="search-results"></div>
   </div>
 
   <main class="public-content-wrapper" aria-label="File directory">
@@ -324,13 +736,13 @@
           </tr>
         </thead>
         <tbody id="public-files-body">
-          <tr><td colspan="4" style="color:var(--accent);">Establishing secure connection to GitHub Server...</td></tr>
+          <tr><td colspan="4" style="color:var(--accent);">Establishing secure connection...</td></tr>
         </tbody>
       </table>
     </div>
 
     <footer class="ascii-footer" aria-hidden="true">
-      <pre class="ascii-art" id="ascii-logo" title="Click 5x to unlock admin...">
+      <pre class="ascii-art" id="ascii-logo" title="Click 5× to unlock admin">
  ██████╗ ██╗  ██╗██████╗ ██╗    ██╗██╗███████╗███████╗
 ██╔═████╗╚██╗██╔╝██╔══██╗██║    ██║██║██╔════╝██╔════╝
 ██║██╔██║ ╚███╔╝ ██████╔╝██║ █╗ ██║██║███████╗█████╗
@@ -346,8 +758,9 @@
           <span class="click-dot" id="d5"></span>
         </span>
       </div>
-      <div class="agent-tagline" id="agent-tagline" style="margin-top:12px;font-size:11.5px;color:var(--accent);letter-spacing:0.12em;min-height:20px;opacity:0.85;"></div>
-      <p class="server-sig">Server: Apache/2.4.62 (Debian) | Host: 0xrwise.github.io | Port: 443</p>
+      <div class="agent-tagline" id="agent-tagline"
+           style="margin-top:10px;font-size:11px;color:var(--accent);letter-spacing:0.12em;min-height:18px;opacity:0.85;"></div>
+      <p class="server-sig">Apache/2.4.62 (Debian) · 0xrwise.github.io · :443</p>
     </footer>
   </main>
 </div>
@@ -356,21 +769,26 @@
      VIEWER PAGE
 ══════════════════════════════════════════════════════════════ -->
 <div id="viewer-page">
-  <nav class="admin-bar" style="border-bottom-color:var(--text-2);" aria-label="File viewer controls">
-    <span class="brand" style="color:var(--text-2);text-shadow:none;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%;">
-      FILE_READER // <span id="viewer-title" style="color:var(--accent);text-shadow:var(--glow-text);text-transform:none;"></span>
+  <!-- Compact symbol nav -->
+  <nav class="viewer-nav" aria-label="File viewer controls">
+    <span class="vn-title">
+      FILE_READER // <span id="viewer-title"></span>
     </span>
-    <div style="display:flex;gap:6px;flex-shrink:0;">
-      <button class="btn btn-ghost btn-sm" id="viewer-share-btn" aria-label="Share file URL">[ SHARE ]</button>
-      <button class="btn btn-ghost btn-sm" id="viewer-copy-btn"  aria-label="Copy file content">[ COPY ]</button>
-      <button class="btn btn-ghost btn-sm" onclick="window.history.back()" aria-label="Go back">[ ← ]</button>
+    <div class="vn-actions">
+      <!-- ⇧ share, ⎘ copy, ← back -->
+      <button class="sym-btn" id="viewer-share-btn" data-tip="Share" aria-label="Share file URL">⇧</button>
+      <button class="sym-btn" id="viewer-copy-btn"  data-tip="Copy"  aria-label="Copy file content">⎘</button>
+      <button class="sym-btn" onclick="window.history.back()" data-tip="Back" aria-label="Go back">←</button>
     </div>
   </nav>
-  <div id="viewer-share-bar" style="display:none;padding:8px 15px;background:#060606;border-bottom:1px solid var(--accent);flex-shrink:0;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span style="color:var(--text-3);font-size:10px;white-space:nowrap;">SHARE_URL:~$</span>
-    <input type="text" id="viewer-share-url" readonly style="flex:1;min-width:0;padding:5px 8px;font-family:var(--mono);font-size:11px;border:1px solid var(--border-lt);background:#000;color:var(--accent);outline:none;cursor:pointer;" onclick="this.select()" />
-    <button class="btn btn-primary btn-sm" id="viewer-share-copy-btn" style="flex-shrink:0;">[ COPY URL ]</button>
+
+  <!-- Share bar — compact -->
+  <div id="viewer-share-bar" style="display:flex;">
+    <span>URL:</span>
+    <input type="text" id="viewer-share-url" readonly onclick="this.select()" />
+    <button class="sym-btn sm" id="viewer-share-copy-btn" data-tip="Copy URL">⎘</button>
   </div>
+
   <article id="viewer-content" aria-label="File content"></article>
 </div>
 
@@ -378,224 +796,267 @@
      ADMIN PAGE
 ══════════════════════════════════════════════════════════════ -->
 <div id="admin-page">
-  <div class="admin-bar">
-    <span class="brand">0<span>x</span>rwise <span style="color:#fff;font-weight:400;">// root@mainframe</span></span>
-    <div class="admin-tabs">
-      <button class="admin-tab active" data-tab="tab-paste">Notepad</button>
-      <button class="admin-tab"        data-tab="tab-blog">Editor</button>
-      <button class="admin-tab"        data-tab="tab-files">Files</button>
-      <button class="admin-tab"        data-tab="tab-settings" style="margin-left:auto;">Settings</button>
-      <button id="logout-btn" class="admin-tab" style="color:var(--danger);">Logout</button>
+
+  <!-- Admin top bar + tabs -->
+  <div class="admin-bar-wrap">
+    <div class="admin-bar-top">
+      <span class="brand" style="font-size:12px;">
+        0<span>x</span>rwise <span style="color:#fff;font-weight:400;">// root</span>
+      </span>
+      <!-- logout symbol on top-right -->
+      <button id="logout-btn" class="sym-btn sm danger" data-tip="Logout" aria-label="Logout"
+              style="border-color:#ff222233;">⏻</button>
+    </div>
+    <div class="admin-tabs" role="tablist">
+      <button class="admin-tab active" data-tab="tab-paste" role="tab">Notepad</button>
+      <button class="admin-tab"        data-tab="tab-blog"  role="tab">Editor</button>
+      <button class="admin-tab"        data-tab="tab-files" role="tab">Files</button>
+      <button class="admin-tab admin-tab-end" data-tab="tab-settings" role="tab">⚙ Settings</button>
     </div>
   </div>
 
-  <!-- Admin stat bar -->
+  <!-- Stat bar — compact, wraps cleanly -->
   <div class="admin-stat-bar" id="admin-stat-bar">
-    <div>REPO: <span id="stat-repo">—</span></div>
-    <div>FILES: <span id="stat-files">—</span></div>
-    <div>HIDDEN: <span id="stat-hidden">—</span></div>
-    <div>SESSION: <span id="stat-session">—</span></div>
-    <div style="margin-left:auto;">PAT: <span id="stat-pat" style="color:#555;">not set</span></div>
+    <div>REPO:<span id="stat-repo">—</span></div>
+    <div>FILES:<span id="stat-files">—</span></div>
+    <div class="hide-sm">HIDDEN:<span id="stat-hidden">—</span></div>
+    <div>TIME:<span id="stat-session">00:00</span></div>
+    <div class="stat-pat">PAT:<span id="stat-pat" style="color:#444;">—</span></div>
   </div>
 
-  <!-- Notepad Tab -->
+  <!-- ── NOTEPAD TAB ─────────────────────────────── -->
   <div class="tab-panel active" id="tab-paste">
     <div class="paste-toolbar">
-      <span class="paste-title">Secure Notepad</span>
+      <span class="paste-title">⬡ Secure Notepad</span>
       <div class="toolbar-actions">
-        <button class="btn btn-ghost btn-sm" id="paste-clear-btn">[ WIPE ]</button>
-        <button class="btn btn-primary btn-sm" id="paste-publish-btn">Execute Push</button>
+        <!-- ⌫ wipe, ▲ push -->
+        <button class="sym-btn" id="paste-clear-btn"   data-tip="Wipe buffer"  aria-label="Wipe">⌫</button>
+        <button class="btn btn-primary btn-sm" id="paste-publish-btn"
+                style="height:34px;padding:0 14px;font-size:11px;letter-spacing:.06em;">▲ PUSH</button>
       </div>
     </div>
-    <textarea id="paste-area" spellcheck="false" placeholder="// Initializing empty buffer...
-// Type notes or script logic here."></textarea>
-    <div style="font-size:10px;color:var(--text-3);padding:4px 15px;flex-shrink:0;border-top:1px solid var(--border);" id="paste-save-status">// Draft saved locally</div>
+    <textarea id="paste-area" spellcheck="false"
+              placeholder="// Initializing empty buffer...&#10;// Type notes or script logic here."></textarea>
+    <div style="font-size:10px;color:var(--text-3,#444);padding:4px 12px;flex-shrink:0;border-top:1px solid var(--border,#111);"
+         id="paste-save-status">// Draft saved locally</div>
   </div>
 
-  <!-- Editor Tab -->
+  <!-- ── EDITOR TAB ─────────────────────────────── -->
   <div class="tab-panel" id="tab-blog">
     <div class="editor-toolbar">
-      <button class="btn btn-primary btn-sm" id="blog-publish-btn" style="margin-right:15px;">Deploy Article</button>
+      <!-- Deploy button -->
+      <button class="btn btn-primary btn-sm" id="blog-publish-btn"
+              style="height:30px;padding:0 12px;font-size:10px;flex-shrink:0;margin-right:6px;">▲ DEPLOY</button>
+
+      <!-- Formatting buttons -->
       <button class="tb-btn" data-action="bold"        title="Bold"><b>B</b></button>
       <button class="tb-btn" data-action="italic"      title="Italic"><i>I</i></button>
       <button class="tb-btn" data-action="strike"      title="Strikethrough"><s>S</s></button>
       <button class="tb-btn" data-action="code-inline" title="Inline code">`</button>
       <div class="sep"></div>
-      <button class="tb-btn wide" data-action="h2"    title="Heading 2">H2</button>
-      <button class="tb-btn wide" data-action="h3"    title="Heading 3">H3</button>
+      <button class="tb-btn wide" data-action="h2" title="H2">H2</button>
+      <button class="tb-btn wide" data-action="h3" title="H3">H3</button>
       <div class="sep"></div>
       <button class="tb-btn" data-action="quote"      title="Blockquote">❝</button>
-      <button class="tb-btn" data-action="ul"         title="Unordered list">≡</button>
-      <button class="tb-btn" data-action="ol"         title="Ordered list">①</button>
-      <button class="tb-btn" data-action="hr"         title="Horizontal rule">—</button>
+      <button class="tb-btn" data-action="ul"         title="List">≡</button>
+      <button class="tb-btn" data-action="ol"         title="Ordered">①</button>
+      <button class="tb-btn" data-action="hr"         title="HR">—</button>
       <button class="tb-btn" data-action="code-block" title="Code block">{}</button>
       <div class="sep"></div>
-      <!-- Custom image insert — no native prompt -->
-      <button class="tb-btn" data-action="image"      title="Insert image" id="tb-img-btn">🖼</button>
-      <button class="tb-btn" data-action="video"      title="Embed YouTube">▶</button>
-      <button class="tb-btn" data-action="link"       title="Insert link" id="tb-link-btn">🔗</button>
+      <button class="tb-btn" data-action="image" title="Insert image" id="tb-img-btn">🖼</button>
+      <button class="tb-btn" data-action="video" title="YouTube">▶</button>
+      <button class="tb-btn" data-action="link"  title="Insert link" id="tb-link-btn">🔗</button>
       <div class="sep"></div>
-      <button class="tb-btn wide" data-action="math-inline" title="Inline KaTeX" style="color:#00d8ff;">$x$</button>
-      <button class="tb-btn wide" data-action="math-block"  title="Block KaTeX"  style="color:#00d8ff;">$$</button>
-      <div class="editor-view-toggle">
-        <button class="view-btn active" data-view="split">Split</button>
-        <button class="view-btn"        data-view="editor">Raw</button>
-        <button class="view-btn"        data-view="preview">Visual</button>
+      <button class="tb-btn wide" data-action="math-inline" title="KaTeX inline" style="color:#00d8ff;">$x$</button>
+      <button class="tb-btn wide" data-action="math-block"  title="KaTeX block"  style="color:#00d8ff;">$$</button>
+
+      <!-- View toggle — pinned to right via flex -->
+      <div class="editor-view-toggle" style="margin-left:auto;flex-shrink:0;">
+        <button class="view-btn active" data-view="split">⧉</button>
+        <button class="view-btn"        data-view="editor">✎</button>
+        <button class="view-btn"        data-view="preview">◉</button>
       </div>
     </div>
     <div class="editor-body">
-      <textarea id="md-input" spellcheck="false" placeholder="# INIT_SEQUENCE&#10;&#10;Enter markdown data..."></textarea>
+      <textarea id="md-input" spellcheck="false"
+                placeholder="# INIT_SEQUENCE&#10;&#10;Enter markdown data..."></textarea>
       <div id="md-preview"></div>
     </div>
   </div>
 
-  <!-- Files Tab — enhanced with hide/show, read, edit, delete -->
+  <!-- ── FILES TAB ──────────────────────────────── -->
   <div class="tab-panel" id="tab-files">
-    <div class="paste-toolbar" style="padding:10px 0;flex-wrap:wrap;gap:6px;">
-      <span class="paste-title" id="admin-files-title">GitHub Directory Protocol</span>
-      <div class="toolbar-actions" style="flex-wrap:wrap;gap:6px;">
-        <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin(window._currentAdminPath||'')">[ REFRESH ]</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadGitHubFilesAdmin('')">CD /ROOT</button>
-        <button class="btn btn-ghost btn-sm" onclick="adminNewFolder()">[ + FOLDER ]</button>
-        <button class="btn btn-ghost btn-sm" onclick="adminNewFile()">[ + FILE ]</button>
-        <button class="btn btn-ghost btn-sm" id="toggle-hidden-btn" onclick="adminToggleShowHidden()" title="Show/Hide hidden files">[ SHOW HIDDEN ]</button>
+    <div class="paste-toolbar" style="flex-wrap:wrap;">
+      <span class="paste-title" id="admin-files-title">⬡ GitHub Directory</span>
+      <div class="toolbar-actions" style="flex-wrap:wrap;">
+        <!-- ↻ refresh, ⌂ root, ⊞ folder, ⊕ file, ◎ hidden -->
+        <button class="sym-btn sm" data-tip="Refresh"
+                onclick="loadGitHubFilesAdmin(window._currentAdminPath||'')">↻</button>
+        <button class="sym-btn sm" data-tip="Root"
+                onclick="loadGitHubFilesAdmin('')">⌂</button>
+        <button class="sym-btn sm" data-tip="New folder"
+                onclick="adminNewFolder()">⊞</button>
+        <button class="sym-btn sm" data-tip="New file"
+                onclick="adminNewFile()">⊕</button>
+        <button class="sym-btn sm" id="toggle-hidden-btn" data-tip="Toggle hidden"
+                onclick="adminToggleShowHidden()">◎</button>
       </div>
     </div>
+
+    <!-- Files list -->
     <div id="tab-files-list" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
       <div class="admin-table-wrap">
-        <table class="gh-table" style="margin-top:0;min-width:560px;">
+        <table class="gh-table">
           <thead>
             <tr>
-              <th>Target Name</th>
-              <th>Path</th>
-              <th class="hide-mobile">Size</th>
-              <th style="min-width:200px;">Commands</th>
+              <th class="col-name">Name</th>
+              <th class="col-path">Path</th>
+              <th class="col-size">Size</th>
+              <th class="col-cmd">Cmd</th>
             </tr>
           </thead>
           <tbody id="admin-files-body"></tbody>
         </table>
       </div>
     </div>
+
+    <!-- Inline edit panel -->
     <div id="inline-edit-panel" style="display:none;flex-direction:column;flex:1;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 15px;background:#080808;border-bottom:1px solid var(--accent);flex-shrink:0;flex-wrap:wrap;gap:6px;">
-        <span style="font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;" id="inline-edit-title">Editing: —</span>
-        <div style="display:flex;gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="adminCancelEdit()">[ CANCEL ]</button>
-          <button class="btn btn-primary btn-sm" onclick="adminSaveEdit()">[ SAVE ]</button>
+      <div class="edit-header">
+        <span id="inline-edit-title">Editing: —</span>
+        <div class="edit-header-actions">
+          <button class="sym-btn sm" onclick="adminCancelEdit()" data-tip="Cancel">✕</button>
+          <button class="sym-btn sm" onclick="adminSaveEdit()"   data-tip="Save"
+                  style="background:rgba(0,255,65,.12);border-color:var(--accent,#00ff41);">✓</button>
         </div>
       </div>
-      <textarea id="inline-edit-area" spellcheck="false" style="flex:1;width:100%;resize:none;background:#020202;border:none;color:var(--accent);font-size:13px;padding:15px;outline:none;font-family:var(--mono);line-height:1.7;"></textarea>
+      <textarea id="inline-edit-area" spellcheck="false"></textarea>
     </div>
   </div>
 
-  <!-- Settings Tab — now full customisation -->
+  <!-- ── SETTINGS TAB ───────────────────────────── -->
   <div class="tab-panel" id="tab-settings">
-    <div style="padding:20px;max-width:600px;width:100%;overflow-y:auto;flex:1;box-sizing:border-box;">
+    <div style="padding:16px 14px;max-width:600px;width:100%;overflow-y:auto;flex:1;">
 
       <!-- Telegram / Honeypot -->
       <div class="settings-section">
-        <h3>// Honeypot — Telegram Config</h3>
-        <p style="font-size:10px;color:#555;margin-bottom:16px;line-height:1.8;">Credentials disimpan di <code style="color:var(--accent);">localStorage</code>. Bot token & Chat ID diperlukan untuk notifikasi intruder.</p>
+        <h3>// ⚡ Honeypot — Telegram</h3>
+        <p style="font-size:10px;color:#444;margin-bottom:14px;line-height:1.8;">
+          Bot token &amp; Chat ID untuk notifikasi intruder. Disimpan di
+          <code style="color:var(--accent,#00ff41);">localStorage</code>.
+        </p>
         <label class="settings-label">Bot Token</label>
-        <input type="password" id="settings-tg-token" placeholder="7123456789:AAHxxxxxxxx" autocomplete="off" class="settings-input" />
+        <input type="password" id="settings-tg-token" placeholder="7123456789:AAHxxxxxxxx"
+               autocomplete="off" class="settings-input" />
         <label class="settings-label">Chat ID</label>
-        <input type="text" id="settings-tg-chat" placeholder="123456789" autocomplete="off" class="settings-input" />
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-          <button class="btn btn-primary btn-sm" id="settings-save-btn"  style="flex:1;min-width:80px;">[ SAVE ]</button>
-          <button class="btn btn-ghost btn-sm"   id="settings-test-btn">[ TEST ALERT ]</button>
-          <button class="btn btn-danger btn-sm"  id="settings-clear-btn">[ WIPE ]</button>
+        <input type="text" id="settings-tg-chat" placeholder="123456789"
+               autocomplete="off" class="settings-input" />
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+          <button class="btn btn-primary btn-sm" id="settings-save-btn"
+                  style="flex:1;min-width:70px;height:34px;">✓ SAVE</button>
+          <button class="btn btn-ghost btn-sm"   id="settings-test-btn"
+                  style="height:34px;">⚡ TEST</button>
+          <button class="btn btn-danger btn-sm"  id="settings-clear-btn"
+                  style="height:34px;">⌫ WIPE</button>
         </div>
-        <div id="settings-status" style="font-size:10px;color:var(--accent);min-height:14px;text-transform:uppercase;letter-spacing:.05em;"></div>
+        <div id="settings-status" style="font-size:10px;color:var(--accent,#00ff41);min-height:14px;letter-spacing:.05em;"></div>
       </div>
 
       <!-- GitHub PAT -->
       <div class="settings-section">
-        <h3>// GitHub Integration</h3>
-        <p style="font-size:10px;color:#555;margin-bottom:8px;line-height:1.8;">
-          <span style="color:#ff6622;">⚠ Mengapa PAT tidak bisa dihapus?</span><br>
-          Firebase hanya menangani autentikasi user (siapa yang login). Untuk operasi <em>baca/tulis file</em> ke GitHub repository (push, create, delete), kamu butuh <strong>GitHub Personal Access Token (PAT)</strong>. Tanpa PAT, semua operasi file manager tidak bisa berjalan. PAT disimpan terenkripsi di localStorage, bukan dikirim ke server manapun.
+        <h3>// ⬡ GitHub Integration</h3>
+        <p style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.8;">
+          <span style="color:#ff6622;">⚠</span> PAT diperlukan untuk operasi file (push/create/delete).
+          Disimpan terenkripsi di localStorage, tidak dikirim ke server.
         </p>
-        <label class="settings-label">GitHub PAT (Personal Access Token)</label>
-        <input type="password" id="settings-pat" placeholder="ghp_••••••••••••" autocomplete="off" class="settings-input" />
-        <label class="settings-label">GitHub Username</label>
-        <input type="text" id="settings-gh-user" placeholder="0xrwise" autocomplete="off" class="settings-input" />
-        <label class="settings-label">GitHub Repo Name</label>
-        <input type="text" id="settings-gh-repo" placeholder="my-repo" autocomplete="off" class="settings-input" />
-        <button class="btn btn-primary btn-sm" id="settings-gh-save-btn">[ SAVE GITHUB CONFIG ]</button>
-        <div id="settings-gh-status" style="font-size:10px;color:var(--accent);margin-top:8px;min-height:14px;"></div>
+        <label class="settings-label">GitHub PAT</label>
+        <input type="password" id="settings-pat" placeholder="ghp_••••••••••••"
+               autocomplete="off" class="settings-input" />
+        <label class="settings-label">Username</label>
+        <input type="text" id="settings-gh-user" placeholder="0xrwise"
+               autocomplete="off" class="settings-input" />
+        <label class="settings-label">Repo Name</label>
+        <input type="text" id="settings-gh-repo" placeholder="my-repo"
+               autocomplete="off" class="settings-input" />
+        <button class="btn btn-primary btn-sm" id="settings-gh-save-btn"
+                style="height:34px;">✓ SAVE GITHUB CONFIG</button>
+        <div id="settings-gh-status" style="font-size:10px;color:var(--accent,#00ff41);margin-top:6px;min-height:14px;"></div>
       </div>
 
-      <!-- Site Branding / Customisation -->
+      <!-- Branding -->
       <div class="settings-section">
-        <h3>// Site Branding &amp; Customisation</h3>
-
-        <label class="settings-label">Site Title (Browser Tab)</label>
+        <h3>// ◈ Site Branding</h3>
+        <label class="settings-label">Site Title</label>
         <input type="text" id="brand-title" placeholder="0xrwise // TERMINAL" class="settings-input" />
-
-        <label class="settings-label">Site Tagline / Meta Description</label>
+        <label class="settings-label">Meta Description</label>
         <input type="text" id="brand-tagline" placeholder="Secure digital knowledge base." class="settings-input" />
-
         <div class="settings-row">
           <div>
-            <label class="settings-label">OG / Twitter Image URL</label>
-            <input type="url" id="brand-og-img" placeholder="https://..." class="settings-input" oninput="previewOGImg(this.value)" />
+            <label class="settings-label">OG Image URL</label>
+            <input type="url" id="brand-og-img" placeholder="https://..."
+                   class="settings-input" oninput="previewOGImg(this.value)" />
             <img id="og-preview-img" src="" alt="OG preview" />
           </div>
           <div>
             <label class="settings-label">Favicon URL</label>
-            <input type="url" id="brand-favicon" placeholder="https://... or data:image/..." class="settings-input" oninput="previewFavicon(this.value)" />
+            <input type="url" id="brand-favicon" placeholder="https://..."
+                   class="settings-input" oninput="previewFavicon(this.value)" />
             <div id="favicon-preview-box">
-              <img id="favicon-preview-img" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>" alt="favicon preview" />
-              <span style="font-size:10px;color:#555;">Current favicon (32×32)</span>
+              <img id="favicon-preview-img"
+                   src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23030303'/><text x='4' y='22' font-size='18' fill='%2300ff41' font-family='monospace' font-weight='bold'>0x</text></svg>"
+                   alt="favicon preview" />
+              <span style="font-size:10px;color:#444;">32×32 preview</span>
             </div>
           </div>
         </div>
-
-        <label class="settings-label">Operator Photo URL (About panel)</label>
+        <label class="settings-label">Avatar URL (About panel)</label>
         <input type="url" id="brand-avatar" placeholder="https://..." class="settings-input" />
-
         <label class="settings-label">Operator Name</label>
         <input type="text" id="brand-op-name" placeholder="Muhammad Rafi A." class="settings-input" />
-
         <label class="settings-label">Operator Role</label>
         <input type="text" id="brand-op-role" placeholder="Digital Student" class="settings-input" />
-
-        <button class="btn btn-primary btn-sm" id="brand-save-btn" style="margin-top:4px;">[ APPLY BRANDING ]</button>
-        <div id="brand-status" style="font-size:10px;color:var(--accent);margin-top:8px;min-height:14px;"></div>
+        <button class="btn btn-primary btn-sm" id="brand-save-btn"
+                style="height:34px;">◈ APPLY BRANDING</button>
+        <div id="brand-status" style="font-size:10px;color:var(--accent,#00ff41);margin-top:6px;min-height:14px;"></div>
       </div>
 
       <!-- Danger Zone -->
       <div class="settings-section">
-        <h3 style="color:#ff4444;">// Danger Zone</h3>
-        <button class="btn btn-danger btn-sm" onclick="adminDangerClearStorage()">[ WIPE ALL STORED CONFIG ]</button>
-        <p style="font-size:10px;color:#555;margin-top:8px;">Menghapus PAT, Telegram config, dan branding dari localStorage.</p>
+        <h3 style="color:#ff4444;">// ☠ Danger Zone</h3>
+        <button class="btn btn-danger btn-sm" onclick="adminDangerClearStorage()"
+                style="height:34px;">⌫ WIPE ALL STORED CONFIG</button>
+        <p style="font-size:10px;color:#444;margin-top:8px;">
+          Menghapus PAT, Telegram config, dan branding dari localStorage.
+        </p>
       </div>
 
     </div>
   </div>
-</div>
+
+</div><!-- /#admin-page -->
 
 <!-- ══════════════════════════════════════════════════════════════
-     OVERLAYS / MODALS
+     OVERLAYS
 ══════════════════════════════════════════════════════════════ -->
 
-<!-- Login — no PAT field, uses Firebase only -->
+<!-- Login -->
 <div class="overlay" id="login-overlay">
   <div class="login-box">
     <h2>// ROOT_ACCESS_REQUIRED</h2>
-    <p style="font-size:11px;color:var(--text-3);margin-bottom:20px;">Enter credentials to bypass security protocol.</p>
+    <p style="font-size:11px;color:var(--text-3,#444);margin-bottom:18px;">
+      Enter credentials to bypass security protocol.
+    </p>
     <label for="username-input">Operator ID (Email)</label>
     <input type="email"    id="username-input" placeholder="agent@0xrwise.com" autocomplete="off" />
     <label for="pw-input">Passphrase</label>
     <input type="password" id="pw-input"       placeholder="••••••••"          autocomplete="off" />
-    <!-- NOTE: PAT dipindah ke Settings tab. Login hanya via Firebase Auth. -->
     <div class="error" id="login-error"></div>
-    <div style="font-size:9px;color:#333;margin-top:8px;margin-bottom:16px;line-height:1.7;">
-      Auth via Firebase. GitHub PAT dapat dikonfigurasi setelah login di menu Settings.
+    <div style="font-size:9px;color:#2a2a2a;margin-top:6px;margin-bottom:14px;line-height:1.7;">
+      Auth via Firebase. GitHub PAT → Settings setelah login.
     </div>
     <div class="url-actions">
-      <button class="btn btn-ghost" onclick="closeLoginOverlay()">Abort</button>
-      <button class="btn btn-primary" id="login-btn" style="width:auto;">Execute</button>
+      <button class="btn btn-ghost" onclick="closeLoginOverlay()">✕ Abort</button>
+      <button class="btn btn-primary" id="login-btn">⏎ Execute</button>
     </div>
   </div>
 </div>
@@ -603,31 +1064,33 @@
 <!-- Publish -->
 <div class="overlay" id="publish-overlay">
   <div class="url-box">
-    <h3>DEPLOY TO REPOSITORY</h3>
-    <label>Set Directory / Filename</label>
-    <input type="text" id="pub-filename" placeholder="e.g. notes/intel.md" />
+    <h3>▲ DEPLOY TO REPOSITORY</h3>
+    <label>Directory / Filename</label>
+    <input type="text" id="pub-filename" placeholder="notes/intel.md" />
     <div class="checkbox-container">
       <input type="checkbox" id="pub-private" />
-      <span class="checkmark" style="border-color:var(--danger);"></span>
-      <label for="pub-private" style="color:var(--danger);">[ ! ] Enable AES Encryption</label>
+      <span class="checkmark" style="border-color:var(--danger,#ff4444);"></span>
+      <label for="pub-private" style="color:var(--danger,#ff4444);">⚿ Enable AES Encryption</label>
     </div>
     <div id="pub-enc-fields" style="display:none;">
-      <label for="pub-enc-key" style="color:var(--danger);">Encryption Key</label>
-      <input type="password" id="pub-enc-key"  placeholder="Min. 8 karakter..." autocomplete="off" />
-      <label for="pub-enc-key2" style="color:var(--danger);">Konfirmasi Key</label>
-      <input type="password" id="pub-enc-key2" placeholder="Ulangi key..."      autocomplete="off" />
-      <p style="font-size:10px;color:var(--danger);margin-bottom:10px;margin-top:-8px;">⚠ Key ini TIDAK disimpan di manapun.</p>
+      <label for="pub-enc-key"  style="color:var(--danger,#ff4444);">Encryption Key</label>
+      <input type="password" id="pub-enc-key"  placeholder="Min. 8 chars..." autocomplete="off" />
+      <label for="pub-enc-key2" style="color:var(--danger,#ff4444);">Confirm Key</label>
+      <input type="password" id="pub-enc-key2" placeholder="Repeat key..."   autocomplete="off" />
+      <p style="font-size:10px;color:var(--danger,#ff4444);margin-bottom:10px;">⚠ Key ini TIDAK disimpan.</p>
     </div>
     <div class="checkbox-container" style="margin-top:4px;">
       <input type="checkbox" id="pub-hidden" />
       <span class="checkmark" style="border-color:#666;"></span>
-      <label for="pub-hidden" style="color:#888;">[ H ] Mark as Hidden (tidak tampil di public)</label>
+      <label for="pub-hidden" style="color:#888;">◎ Mark as Hidden (tidak tampil public)</label>
     </div>
-    <p style="font-size:10.5px;color:var(--text-3);margin-bottom:20px;margin-top:8px;">Warning: File .enc memerlukan passphrase untuk dibuka.</p>
+    <p style="font-size:10px;color:var(--text-3,#444);margin:8px 0 16px;">
+      File .enc memerlukan passphrase untuk dibuka.
+    </p>
     <div class="error" id="pub-error"></div>
     <div class="url-actions">
-      <button class="btn btn-ghost btn-sm" onclick="closePublishOverlay()">Abort</button>
-      <button class="btn btn-primary btn-sm" id="pub-ok">Confirm Push</button>
+      <button class="btn btn-ghost btn-sm"   onclick="closePublishOverlay()">✕ Abort</button>
+      <button class="btn btn-primary btn-sm" id="pub-ok">▲ Confirm Push</button>
     </div>
   </div>
 </div>
@@ -635,113 +1098,125 @@
 <!-- Decrypt -->
 <div class="overlay" id="decrypt-overlay">
   <div class="url-box">
-    <h3 style="color:var(--danger);text-shadow:0 0 10px red;">ENCRYPTED PAYLOAD</h3>
-    <p style="font-size:11px;color:var(--text-2);margin-bottom:15px;">Target file is locked via AES algorithm. Provide decryption key.</p>
+    <h3 style="color:var(--danger,#ff4444);text-shadow:0 0 10px red;">⚿ ENCRYPTED PAYLOAD</h3>
+    <p style="font-size:11px;color:var(--text-2,#888);margin-bottom:14px;">
+      File terkunci via AES. Masukkan decryption key.
+    </p>
     <input type="password" id="decrypt-pw" placeholder="Enter Key..." />
     <div class="error" id="decrypt-error"></div>
     <div class="url-actions">
-      <button class="btn btn-ghost btn-sm"  onclick="closeDecryptOverlay()">Cancel</button>
-      <button class="btn btn-danger btn-sm" id="decrypt-ok">Decrypt</button>
+      <button class="btn btn-ghost btn-sm"  onclick="closeDecryptOverlay()">✕ Cancel</button>
+      <button class="btn btn-danger btn-sm" id="decrypt-ok">⚿ Decrypt</button>
     </div>
   </div>
 </div>
 
 <!-- About -->
 <div class="overlay" id="about-overlay">
-  <div class="login-box" style="max-width:560px;width:100%;">
-    <h2 style="margin-bottom:18px;">// OPERATOR_PROFILE</h2>
-    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+  <div class="login-box" style="max-width:520px;width:100%;">
+    <h2 style="margin-bottom:16px;">// OPERATOR_PROFILE</h2>
+    <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
       <div style="flex-shrink:0;text-align:center;">
-        <div style="width:90px;height:90px;border:2px solid var(--accent);box-shadow:var(--glow);overflow:hidden;position:relative;background:#000;">
-          <img id="about-avatar-img" src="https://i.ibb.co/xKYgN97k/ef264507-1f42-4123-b90a-862fb2fcce57.jpg" alt="Operator"
+        <div style="width:84px;height:84px;border:2px solid var(--accent,#00ff41);box-shadow:var(--glow);overflow:hidden;background:#000;">
+          <img id="about-avatar-img"
+               src="https://i.ibb.co/xKYgN97k/ef264507-1f42-4123-b90a-862fb2fcce57.jpg"
+               alt="Operator"
                style="width:100%;height:100%;object-fit:cover;filter:grayscale(30%);"
                onerror="this.style.display='none'" />
         </div>
-        <div style="font-size:9px;color:var(--text-3);margin-top:5px;letter-spacing:.1em;">CLASSIFIED</div>
+        <div style="font-size:9px;color:var(--text-3,#444);margin-top:5px;letter-spacing:.1em;">CLASSIFIED</div>
       </div>
-      <div style="flex:1;min-width:180px;">
-        <div class="agent-tagline" id="about-tagline" style="font-size:11px;color:var(--accent);min-height:18px;display:block;margin-bottom:12px;"></div>
-        <div style="font-size:12px;line-height:1.9;color:var(--text-2);">
-          <div><span style="color:var(--accent);">NAME</span>   : <span id="about-name" style="color:var(--text);">Muhammad Rafi A.</span></div>
-          <div><span style="color:var(--accent);">ROLE</span>   : <span id="about-role" style="color:var(--text);">Digital Student</span></div>
-          <div><span style="color:var(--accent);">STATUS</span> : <span style="color:#00ff41;">● ACTIVE</span></div>
-          <div><span style="color:var(--accent);">GITHUB</span> : <a href="https://github.com/0xrwise" target="_blank" style="color:var(--text);border-bottom:1px dashed var(--accent);">github.com/0xrwise</a></div>
+      <div style="flex:1;min-width:160px;">
+        <div class="agent-tagline" id="about-tagline"
+             style="font-size:11px;color:var(--accent,#00ff41);min-height:16px;display:block;margin-bottom:10px;"></div>
+        <div style="font-size:12px;line-height:2;color:var(--text-2,#888);">
+          <div><span style="color:var(--accent,#00ff41);">NAME</span> : <span id="about-name">Muhammad Rafi A.</span></div>
+          <div><span style="color:var(--accent,#00ff41);">ROLE</span> : <span id="about-role">Digital Student</span></div>
+          <div><span style="color:var(--accent,#00ff41);">STATUS</span> : <span style="color:#00ff41;">● ACTIVE</span></div>
+          <div><span style="color:var(--accent,#00ff41);">GITHUB</span> :
+            <a href="https://github.com/0xrwise" target="_blank"
+               style="color:var(--text,#ccc);border-bottom:1px dashed var(--accent,#00ff41);">github.com/0xrwise</a>
+          </div>
         </div>
-        <p style="font-size:11px;color:var(--text-3);margin-top:12px;border-top:1px dashed var(--border-lt);padding-top:10px;">
+        <p style="font-size:10px;color:var(--text-3,#444);margin-top:10px;border-top:1px dashed var(--border-lt,#1e1e1e);padding-top:8px;">
           "Routing packets, encrypting thoughts, compiling the future."
         </p>
       </div>
     </div>
-    <div class="url-actions" style="margin-top:12px;">
-      <button class="btn btn-ghost btn-sm" onclick="closeAboutOverlay()">[ CLOSE ]</button>
+    <div class="url-actions" style="margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeAboutOverlay()">✕ CLOSE</button>
     </div>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
-     CUSTOM MODAL: Image URL input (replaces native prompt)
+     CUSTOM MODALS
 ══════════════════════════════════════════════════════════════ -->
+
+<!-- Image modal -->
 <div class="modal-overlay" id="img-modal">
   <div class="modal-box">
-    <h3>// Insert Image</h3>
+    <h3>🖼 Insert Image</h3>
     <label>Image URL</label>
-    <input type="url" id="img-modal-url" placeholder="https://example.com/image.png" />
+    <input type="url"  id="img-modal-url" placeholder="https://example.com/image.png" />
     <label>Alt Text (optional)</label>
     <input type="text" id="img-modal-alt" placeholder="image description" />
     <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeImgModal()">[ CANCEL ]</button>
-      <button class="btn-modal-ok"     onclick="confirmImgModal()">[ INSERT ]</button>
+      <button class="btn-modal-cancel" onclick="closeImgModal()">✕ Cancel</button>
+      <button class="btn-modal-ok"     onclick="confirmImgModal()">✓ Insert</button>
     </div>
   </div>
 </div>
 
-<!-- CUSTOM MODAL: Link input -->
+<!-- Link modal -->
 <div class="modal-overlay" id="link-modal">
   <div class="modal-box">
-    <h3>// Insert Link</h3>
+    <h3>🔗 Insert Link</h3>
     <label>URL</label>
-    <input type="url" id="link-modal-url" placeholder="https://example.com" />
+    <input type="url"  id="link-modal-url"  placeholder="https://example.com" />
     <label>Link Text</label>
     <input type="text" id="link-modal-text" placeholder="Click here" />
     <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeLinkModal()">[ CANCEL ]</button>
-      <button class="btn-modal-ok"     onclick="confirmLinkModal()">[ INSERT ]</button>
+      <button class="btn-modal-cancel" onclick="closeLinkModal()">✕ Cancel</button>
+      <button class="btn-modal-ok"     onclick="confirmLinkModal()">✓ Insert</button>
     </div>
   </div>
 </div>
 
-<!-- CUSTOM MODAL: Video embed -->
+<!-- Video modal -->
 <div class="modal-overlay" id="video-modal">
   <div class="modal-box">
-    <h3>// Embed YouTube</h3>
+    <h3>▶ Embed YouTube</h3>
     <label>YouTube URL or Video ID</label>
-    <input type="text" id="video-modal-url" placeholder="https://youtube.com/watch?v=... or dQw4w9WgXcQ" />
+    <input type="text" id="video-modal-url" placeholder="https://youtube.com/watch?v=... or videoID" />
     <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeVideoModal()">[ CANCEL ]</button>
-      <button class="btn-modal-ok"     onclick="confirmVideoModal()">[ INSERT ]</button>
+      <button class="btn-modal-cancel" onclick="closeVideoModal()">✕ Cancel</button>
+      <button class="btn-modal-ok"     onclick="confirmVideoModal()">✓ Insert</button>
     </div>
   </div>
 </div>
 
-<!-- CUSTOM MODAL: Confirm delete -->
+<!-- Confirm delete modal -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
-    <h3 style="color:#ff4444;">// Confirm Delete</h3>
-    <p id="confirm-modal-msg" style="font-size:12px;color:#999;margin-bottom:20px;line-height:1.8;"></p>
+    <h3 style="color:#ff4444;">☠ Confirm Delete</h3>
+    <p id="confirm-modal-msg" style="font-size:12px;color:#888;margin-bottom:18px;line-height:1.8;white-space:pre-line;"></p>
     <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeConfirmModal()">[ ABORT ]</button>
-      <button class="btn-modal-danger" id="confirm-modal-ok">[ CONFIRM DELETE ]</button>
+      <button class="btn-modal-cancel" onclick="closeConfirmModal()">✕ Abort</button>
+      <button class="btn-modal-danger" id="confirm-modal-ok">☠ Confirm Delete</button>
     </div>
   </div>
 </div>
 
-<!-- CUSTOM MODAL: Read file viewer -->
+<!-- Read file modal -->
 <div class="modal-overlay" id="read-modal">
-  <div class="modal-box" style="width:min(700px,96vw);max-height:85vh;display:flex;flex-direction:column;">
-    <h3>// File Preview: <span id="read-modal-title" style="text-transform:none;color:#ccc;"></span></h3>
-    <pre id="read-modal-body" style="flex:1;overflow-y:auto;background:#000;border:1px solid #111;padding:12px;font-size:12px;color:#aaa;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-bottom:12px;"></pre>
+  <div class="modal-box" style="max-width:min(700px,96vw);max-height:85vh;display:flex;flex-direction:column;">
+    <h3>◉ Preview: <span id="read-modal-title" style="text-transform:none;color:#ccc;font-weight:400;"></span></h3>
+    <pre id="read-modal-body"
+         style="flex:1;overflow-y:auto;background:#000;border:1px solid #111;padding:12px;font-size:12px;
+                color:#aaa;line-height:1.7;white-space:pre-wrap;word-break:break-all;margin-bottom:10px;"></pre>
     <div class="modal-actions">
-      <button class="btn-modal-cancel" onclick="closeReadModal()">[ CLOSE ]</button>
+      <button class="btn-modal-cancel" onclick="closeReadModal()">✕ Close</button>
     </div>
   </div>
 </div>
@@ -754,7 +1229,7 @@
     <div id="hp-terminal-scanline"></div>
     <div id="hp-terminal-titlebar">
       <span>⚠ 0XRWISE // INTRUSION DETECTION SYSTEM v2.4</span>
-      <button onclick="document.getElementById('hp-terminal-overlay').classList.remove('active')">[ DISMISS ]</button>
+      <button onclick="document.getElementById('hp-terminal-overlay').classList.remove('active')">✕ DISMISS</button>
     </div>
     <div id="hp-terminal-body">
       <span class="hp-cursor" id="hp-cursor-main"></span>
@@ -766,10 +1241,10 @@
    style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;"
    data-hp="true"></a>
 
-<!-- Toast notification -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Secure hash status indicator (non-obvious) -->
+<!-- Hash status indicator -->
 <div id="hash-status"></div>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -788,56 +1263,37 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<!-- Config -->
 <script src="config.js"></script>
-<!-- Honeypot -->
 <script src="assets/honeypot.js"></script>
 
 <!-- ══════════════════════════════════════════════
      SECURE ROUTING + MODAL UTILITIES
-     Replaces direct hash-based admin access
 ══════════════════════════════════════════════ -->
 <script>
-/**
- * SECURE ROUTING
- * =============
- * Hashes are obfuscated using a one-time session token.
- * /admin and /login are never exposed in the URL bar.
- * Instead, the URL shows encoded tokens like:
- *   #s=a1b2c3d4  (session token for admin)
- *   #s=e5f6a7b8  (session token for login)
- *
- * The ASCII logo click trick generates a session token
- * client-side and navigates to the encoded URL.
- */
-
 (function() {
   'use strict';
 
-  // Generate cryptographically random session token
   function genToken(len) {
     const arr = new Uint8Array(len);
     crypto.getRandomValues(arr);
     return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('').slice(0, len*2);
   }
 
-  // Session-scoped route map (regenerated on every page load)
   const _SESSION = genToken(8);
-  const _ROUTES = {};
+  const _ROUTES  = {};
+
   function registerRoute(name) {
     const tok = CryptoJS.MD5(_SESSION + name + navigator.userAgent.slice(0,20)).toString().slice(0,12);
-    _ROUTES[tok] = name;
-    _ROUTES[name] = tok; // reverse lookup
+    _ROUTES[tok]  = name;
+    _ROUTES[name] = tok;
     return tok;
   }
 
-  // Wait for CryptoJS to load
   window.addEventListener('DOMContentLoaded', () => {
     window._ROUTE_LOGIN = registerRoute('__login__');
     window._ROUTE_ADMIN = registerRoute('__admin__');
     window._ROUTE_ABOUT = registerRoute('__about__');
 
-    // Override hash navigation
     function routeTo(name) {
       const tok = _ROUTES[name];
       if (tok) window.location.hash = 's=' + tok;
@@ -846,13 +1302,12 @@
     window.showLogin = function() { routeTo('__login__'); };
     window.showAbout = function() { routeTo('__about__'); };
     window.showAdmin = function() { routeTo('__admin__'); };
+    window.closeLoginOverlay   = function() { window.location.hash = ''; };
+    window.closePublishOverlay = function() { history.back(); };
+    window.closeDecryptOverlay = function() { history.back(); };
+    window.closeAboutOverlay   = function() { window.location.hash = ''; };
 
-    window.closeLoginOverlay  = function() { window.location.hash = ''; };
-    window.closePublishOverlay= function() { history.back(); };
-    window.closeDecryptOverlay= function() { history.back(); };
-    window.closeAboutOverlay  = function() { window.location.hash = ''; };
-
-    // Patch the ascii-logo click to use secure route
+    // ASCII logo — 5× click → login
     const logo = document.getElementById('ascii-logo');
     if (logo) {
       let _clicks = 0, _timer;
@@ -860,85 +1315,54 @@
         _clicks++;
         clearTimeout(_timer);
         _timer = setTimeout(() => { _clicks = 0; }, 3000);
-        if (_clicks >= 5) {
-          _clicks = 0;
-          routeTo('__login__');
-        }
+        if (_clicks >= 5) { _clicks = 0; routeTo('__login__'); }
       });
     }
 
-    // Hash router
     function handleHash() {
       const h = window.location.hash.replace('#','');
-      if (!h) {
-        // Default public view — handled by main.js
-        return;
-      }
-
-      // Secure token routing
+      if (!h) return;
       if (h.startsWith('s=')) {
-        const tok = h.slice(2);
+        const tok   = h.slice(2);
         const route = _ROUTES[tok];
-        if (route === '__login__') {
-          document.getElementById('hash-status').textContent = '';
-          // Show login overlay — dispatched to main.js via event
-          document.dispatchEvent(new CustomEvent('route:login'));
-          return;
-        }
-        if (route === '__admin__') {
-          document.dispatchEvent(new CustomEvent('route:admin'));
-          return;
-        }
-        if (route === '__about__') {
-          document.dispatchEvent(new CustomEvent('route:about'));
-          return;
-        }
-        // Unknown token — redirect to home silently
+        if (route === '__login__') { document.dispatchEvent(new CustomEvent('route:login')); return; }
+        if (route === '__admin__') { document.dispatchEvent(new CustomEvent('route:admin')); return; }
+        if (route === '__about__') { document.dispatchEvent(new CustomEvent('route:about')); return; }
         window.location.hash = '';
         return;
       }
-
-      // File viewer routing (public) — forwarded to main.js
       document.dispatchEvent(new CustomEvent('route:hash', { detail: h }));
     }
 
     window.addEventListener('hashchange', handleHash);
-    handleHash(); // initial
+    handleHash();
   });
-
 })();
 
 /* ─── Custom Modal Utilities ──────────────────── */
 
-// Image modal
 function openImgModal() {
   document.getElementById('img-modal-url').value = '';
   document.getElementById('img-modal-alt').value = '';
   document.getElementById('img-modal').classList.add('active');
   setTimeout(() => document.getElementById('img-modal-url').focus(), 50);
 }
-function closeImgModal() {
-  document.getElementById('img-modal').classList.remove('active');
-}
+function closeImgModal()   { document.getElementById('img-modal').classList.remove('active'); }
 function confirmImgModal() {
   const url = document.getElementById('img-modal-url').value.trim();
   const alt = document.getElementById('img-modal-alt').value.trim() || 'image';
   if (!url) { closeImgModal(); return; }
-  const md = `![${alt}](${url})`;
-  insertAtCursor(document.getElementById('md-input'), md);
+  insertAtCursor(document.getElementById('md-input'), `![${alt}](${url})`);
   closeImgModal();
 }
 
-// Link modal
 function openLinkModal() {
-  document.getElementById('link-modal-url').value = '';
+  document.getElementById('link-modal-url').value  = '';
   document.getElementById('link-modal-text').value = '';
   document.getElementById('link-modal').classList.add('active');
   setTimeout(() => document.getElementById('link-modal-url').focus(), 50);
 }
-function closeLinkModal() {
-  document.getElementById('link-modal').classList.remove('active');
-}
+function closeLinkModal()   { document.getElementById('link-modal').classList.remove('active'); }
 function confirmLinkModal() {
   const url  = document.getElementById('link-modal-url').value.trim();
   const text = document.getElementById('link-modal-text').value.trim() || url;
@@ -947,19 +1371,15 @@ function confirmLinkModal() {
   closeLinkModal();
 }
 
-// Video modal
 function openVideoModal() {
   document.getElementById('video-modal-url').value = '';
   document.getElementById('video-modal').classList.add('active');
   setTimeout(() => document.getElementById('video-modal-url').focus(), 50);
 }
-function closeVideoModal() {
-  document.getElementById('video-modal').classList.remove('active');
-}
+function closeVideoModal()   { document.getElementById('video-modal').classList.remove('active'); }
 function confirmVideoModal() {
   let val = document.getElementById('video-modal-url').value.trim();
   if (!val) { closeVideoModal(); return; }
-  // Extract video ID
   let vid = val;
   const m = val.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   if (m) vid = m[1];
@@ -968,7 +1388,6 @@ function confirmVideoModal() {
   closeVideoModal();
 }
 
-// Confirm / delete modal
 let _confirmCallback = null;
 function openConfirmModal(msg, cb) {
   document.getElementById('confirm-modal-msg').textContent = msg;
@@ -986,17 +1405,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 });
 
-// Read modal
 function openReadModal(title, content) {
   document.getElementById('read-modal-title').textContent = title;
   document.getElementById('read-modal-body').textContent  = content;
   document.getElementById('read-modal').classList.add('active');
 }
-function closeReadModal() {
-  document.getElementById('read-modal').classList.remove('active');
-}
+function closeReadModal() { document.getElementById('read-modal').classList.remove('active'); }
 
-// Helper: insert text at cursor in textarea
 function insertAtCursor(ta, text) {
   const s = ta.selectionStart, e = ta.selectionEnd;
   ta.value = ta.value.slice(0,s) + text + ta.value.slice(e);
@@ -1005,25 +1420,23 @@ function insertAtCursor(ta, text) {
   ta.dispatchEvent(new Event('input'));
 }
 
-// Intercept toolbar buttons to use custom modals
+// Intercept toolbar image/link/video buttons
 document.addEventListener('DOMContentLoaded', () => {
   const imgBtn  = document.getElementById('tb-img-btn');
   const linkBtn = document.getElementById('tb-link-btn');
-  if (imgBtn)  imgBtn.addEventListener('click', (e) => { e.stopPropagation(); openImgModal(); });
-  if (linkBtn) linkBtn.addEventListener('click', (e) => { e.stopPropagation(); openLinkModal(); });
-
-  // Video button — find by data-action
+  if (imgBtn)  imgBtn.addEventListener('click',  e => { e.stopPropagation(); openImgModal();   });
+  if (linkBtn) linkBtn.addEventListener('click', e => { e.stopPropagation(); openLinkModal();  });
   document.querySelectorAll('.tb-btn[data-action="video"]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); openVideoModal(); });
+    btn.addEventListener('click', e => { e.stopPropagation(); openVideoModal(); });
   });
 });
 
-/* ─── Branding / Customisation ───────────────── */
+/* ─── Branding ───────────────────────────────── */
 
 function previewOGImg(url) {
   const img = document.getElementById('og-preview-img');
   if (url) { img.src = url; img.style.display = 'block'; }
-  else      { img.style.display = 'none'; }
+  else     { img.style.display = 'none'; }
 }
 function previewFavicon(url) {
   const img = document.getElementById('favicon-preview-img');
@@ -1034,7 +1447,6 @@ function applyBranding(data) {
   if (!data) return;
   if (data.title) {
     document.title = data.title;
-    document.getElementById('meta-title') && (document.getElementById('meta-title').textContent = data.title);
     const og = document.getElementById('og-title');
     if (og) og.setAttribute('content', data.title);
   }
@@ -1042,25 +1454,12 @@ function applyBranding(data) {
     const d = document.getElementById('meta-desc'); if (d) d.setAttribute('content', data.tagline);
     const o = document.getElementById('og-desc');   if (o) o.setAttribute('content', data.tagline);
   }
-  if (data.ogImg) {
-    const o = document.getElementById('og-image'); if (o) o.setAttribute('content', data.ogImg);
-  }
-  if (data.favicon) {
-    const link = document.getElementById('favicon-link');
-    if (link) link.href = data.favicon;
-    const prev = document.getElementById('favicon-preview-img');
-    if (prev) prev.src = data.favicon;
-  }
-  if (data.avatar) {
-    const img = document.getElementById('about-avatar-img');
-    if (img) img.src = data.avatar;
-  }
-  if (data.opName) {
-    const n = document.getElementById('about-name'); if (n) n.textContent = data.opName;
-  }
-  if (data.opRole) {
-    const r = document.getElementById('about-role'); if (r) r.textContent = data.opRole;
-  }
+  if (data.ogImg)  { const o = document.getElementById('og-image');         if (o) o.setAttribute('content', data.ogImg); }
+  if (data.favicon){ const l = document.getElementById('favicon-link');     if (l) l.href = data.favicon;
+                     const p = document.getElementById('favicon-preview-img'); if (p) p.src = data.favicon; }
+  if (data.avatar) { const i = document.getElementById('about-avatar-img'); if (i) i.src = data.avatar; }
+  if (data.opName) { const n = document.getElementById('about-name');       if (n) n.textContent = data.opName; }
+  if (data.opRole) { const r = document.getElementById('about-role');       if (r) r.textContent = data.opRole; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1070,7 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyBranding(b);
     if (b.title)   document.getElementById('brand-title').value   = b.title;
     if (b.tagline) document.getElementById('brand-tagline').value = b.tagline;
-    if (b.ogImg)   { document.getElementById('brand-og-img').value = b.ogImg; previewOGImg(b.ogImg); }
+    if (b.ogImg)   { document.getElementById('brand-og-img').value = b.ogImg;   previewOGImg(b.ogImg); }
     if (b.favicon) { document.getElementById('brand-favicon').value = b.favicon; previewFavicon(b.favicon); }
     if (b.avatar)  document.getElementById('brand-avatar').value  = b.avatar;
     if (b.opName)  document.getElementById('brand-op-name').value = b.opName;
@@ -1089,11 +1488,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     localStorage.setItem('__brand__', JSON.stringify(data));
     applyBranding(data);
-    document.getElementById('brand-status').textContent = '✓ Branding applied & saved.';
-    setTimeout(() => document.getElementById('brand-status').textContent = '', 3000);
+    const s = document.getElementById('brand-status');
+    s.textContent = '✓ Branding applied.';
+    setTimeout(() => s.textContent = '', 3000);
   };
 
-  // Load PAT/GH config into settings fields
+  // Load PAT/GH config
   try {
     const pat  = localStorage.getItem('__gh_pat__')  || '';
     const user = localStorage.getItem('__gh_user__') || '';
@@ -1101,8 +1501,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pat)  document.getElementById('settings-pat').value     = pat;
     if (user) document.getElementById('settings-gh-user').value = user;
     if (repo) document.getElementById('settings-gh-repo').value = repo;
-    document.getElementById('stat-pat').textContent = pat ? '✓ set' : 'not set';
-    document.getElementById('stat-pat').style.color = pat ? 'var(--accent)' : '#555';
+    const sp = document.getElementById('stat-pat');
+    sp.textContent = pat ? '✓' : '—';
+    sp.style.color = pat ? 'var(--accent,#00ff41)' : '#444';
   } catch(e) {}
 
   document.getElementById('settings-gh-save-btn').onclick = function() {
@@ -1112,16 +1513,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pat)  localStorage.setItem('__gh_pat__',  pat);
     if (user) localStorage.setItem('__gh_user__', user);
     if (repo) localStorage.setItem('__gh_repo__', repo);
-    document.getElementById('settings-gh-status').textContent = '✓ GitHub config saved.';
-    document.getElementById('stat-pat').textContent = pat ? '✓ set' : 'not set';
-    document.getElementById('stat-pat').style.color = pat ? 'var(--accent)' : '#555';
-    setTimeout(() => document.getElementById('settings-gh-status').textContent = '', 3000);
+    const s = document.getElementById('settings-gh-status');
+    s.textContent = '✓ GitHub config saved.';
+    const sp = document.getElementById('stat-pat');
+    sp.textContent = pat ? '✓' : '—';
+    sp.style.color = pat ? 'var(--accent,#00ff41)' : '#444';
+    setTimeout(() => s.textContent = '', 3000);
   };
 
-  // Danger: wipe all
   window.adminDangerClearStorage = function() {
-    openConfirmModal('Hapus semua config dari localStorage? (PAT, Telegram, Branding)', () => {
-      ['__gh_pat__','__gh_user__','__gh_repo__','__brand__','__tg_token__','__tg_chat__'].forEach(k => localStorage.removeItem(k));
+    openConfirmModal('Hapus semua config dari localStorage?\n(PAT, Telegram, Branding)', () => {
+      ['__gh_pat__','__gh_user__','__gh_repo__','__brand__','__tg_token__','__tg_chat__']
+        .forEach(k => localStorage.removeItem(k));
       location.reload();
     });
   };
@@ -1129,64 +1532,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // Session timer
   const _start = Date.now();
   setInterval(() => {
-    const elapsed = Math.floor((Date.now() - _start)/1000);
-    const m = Math.floor(elapsed/60).toString().padStart(2,'0');
-    const s = (elapsed%60).toString().padStart(2,'0');
+    const elapsed = Math.floor((Date.now() - _start) / 1000);
+    const m = Math.floor(elapsed / 60).toString().padStart(2,'0');
+    const s = (elapsed % 60).toString().padStart(2,'0');
     const el = document.getElementById('stat-session');
     if (el) el.textContent = m + ':' + s;
   }, 1000);
 });
 
-/* ─── Admin: hide/show files ─────────────────── */
+/* ─── Admin file hide/show ───────────────────── */
 window._showHiddenFiles = false;
 window.adminToggleShowHidden = function() {
   window._showHiddenFiles = !window._showHiddenFiles;
   const btn = document.getElementById('toggle-hidden-btn');
-  if (btn) btn.textContent = window._showHiddenFiles ? '[ HIDE HIDDEN ]' : '[ SHOW HIDDEN ]';
-  // Re-render file list
+  if (btn) {
+    btn.style.opacity = window._showHiddenFiles ? '1' : '0.5';
+    btn.setAttribute('data-tip', window._showHiddenFiles ? 'Showing hidden' : 'Toggle hidden');
+  }
   if (window._lastFileData) renderAdminFiles(window._lastFileData);
 };
 
-// Hidden file list (stored in localStorage as JSON array of paths)
 function getHiddenList() {
   try { return JSON.parse(localStorage.getItem('__hidden_files__') || '[]'); } catch(e) { return []; }
 }
-function saveHiddenList(list) {
-  localStorage.setItem('__hidden_files__', JSON.stringify(list));
-}
+function saveHiddenList(list) { localStorage.setItem('__hidden_files__', JSON.stringify(list)); }
+
 window.adminHideFile = function(path) {
   const list = getHiddenList();
   if (!list.includes(path)) { list.push(path); saveHiddenList(list); }
   if (window._lastFileData) renderAdminFiles(window._lastFileData);
-  showToastMsg('File hidden from public listing.');
+  showToastMsg('File hidden.');
 };
 window.adminUnhideFile = function(path) {
-  const list = getHiddenList().filter(p => p !== path);
-  saveHiddenList(list);
+  saveHiddenList(getHiddenList().filter(p => p !== path));
   if (window._lastFileData) renderAdminFiles(window._lastFileData);
-  showToastMsg('File visible in public listing.');
+  showToastMsg('File visible.');
 };
-window.isFileHidden = function(path) {
-  return getHiddenList().includes(path);
-};
+window.isFileHidden = path => getHiddenList().includes(path);
 
-// Admin read file
 window.adminReadFile = async function(path, name) {
   try {
     const pat  = localStorage.getItem('__gh_pat__')  || (window.CONFIG && window.CONFIG.ghPat)  || '';
     const user = localStorage.getItem('__gh_user__') || (window.CONFIG && window.CONFIG.ghUser) || '';
     const repo = localStorage.getItem('__gh_repo__') || (window.CONFIG && window.CONFIG.ghRepo) || '';
-    const url  = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
-    const res  = await fetch(url, { headers: { Authorization: 'token ' + pat, Accept: 'application/vnd.github.v3+json' }});
+    const res  = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${path}`,
+      { headers: { Authorization: 'token ' + pat, Accept: 'application/vnd.github.v3+json' }});
     const data = await res.json();
-    const content = atob(data.content.replace(/\n/g,''));
-    openReadModal(name, content);
-  } catch(e) {
-    openReadModal(name, 'ERROR: ' + e.message);
-  }
+    openReadModal(name, atob(data.content.replace(/\n/g,'')));
+  } catch(e) { openReadModal(name, 'ERROR: ' + e.message); }
 };
 
-// Render admin files with extra action buttons
 window.renderAdminFiles = function(files) {
   window._lastFileData = files;
   const tbody = document.getElementById('admin-files-body');
@@ -1200,51 +1595,55 @@ window.renderAdminFiles = function(files) {
     if (hidden) hiddenCount++;
     if (hidden && !window._showHiddenFiles) return;
 
-    const isDir  = f.type === 'dir';
-    const badge  = hidden ? '<span class="badge badge-hidden">HIDDEN</span>' : '<span class="badge badge-pub">PUB</span>';
-    const encBadge = f.name.endsWith('.enc') ? '<span class="badge badge-enc">ENC</span>' : '';
-    const rowClass = hidden ? 'class="row-hidden"' : '';
+    const isDir     = f.type === 'dir';
+    const badge     = hidden
+      ? '<span class="badge badge-hidden">H</span>'
+      : '<span class="badge badge-pub">P</span>';
+    const encBadge  = f.name.endsWith('.enc') ? '<span class="badge badge-enc">⚿</span>' : '';
+    const rowClass  = hidden ? 'class="row-hidden"' : '';
+    const sizeStr   = f.size ? (f.size > 1024 ? (f.size/1024).toFixed(1)+'K' : f.size+'B') : '—';
 
     html += `<tr ${rowClass}>
-      <td style="word-break:break-all;">${isDir ? '📁 ' : '📄 '}<strong>${f.name}</strong>${badge}${encBadge}</td>
-      <td style="font-size:10px;color:#555;word-break:break-all;">${f.path}</td>
-      <td class="hide-mobile" style="font-size:10px;color:#555;">${f.size ? (f.size > 1024 ? (f.size/1024).toFixed(1)+'K' : f.size+'B') : '—'}</td>
-      <td>
+      <td class="col-name">${isDir ? '📁' : '📄'} <strong>${f.name}</strong>${badge}${encBadge}</td>
+      <td class="col-path">${f.path}</td>
+      <td class="col-size">${sizeStr}</td>
+      <td class="col-cmd">
         <div class="file-actions">
-          ${isDir ? `<button onclick="loadGitHubFilesAdmin('${f.path}')">[ CD ]</button>` : `
-          <button onclick="adminReadFile('${f.path}','${f.name}')">[ READ ]</button>
-          <button onclick="adminEditFile('${f.path}','${f.name}')">[ EDIT ]</button>
-          `}
-          ${hidden
-            ? `<button onclick="adminUnhideFile('${f.path}')">[ SHOW ]</button>`
-            : `<button onclick="adminHideFile('${f.path}')">[ HIDE ]</button>`
+          ${isDir
+            ? `<button class="sym-btn sm" onclick="loadGitHubFilesAdmin('${f.path}')" data-tip="Open dir" title="Open">→</button>`
+            : `<button class="sym-btn sm" onclick="adminReadFile('${f.path}','${f.name}')" data-tip="Read" title="Read">◉</button>
+               <button class="sym-btn sm" onclick="adminEditFile('${f.path}','${f.name}')" data-tip="Edit" title="Edit">✎</button>`
           }
-          <button class="danger" onclick="adminDeleteFileConfirm('${f.path}','${f.name}')">[ DEL ]</button>
+          ${hidden
+            ? `<button class="sym-btn sm" onclick="adminUnhideFile('${f.path}')" data-tip="Show" title="Show">◉</button>`
+            : `<button class="sym-btn sm" onclick="adminHideFile('${f.path}')"   data-tip="Hide" title="Hide">◎</button>`
+          }
+          <button class="sym-btn sm danger" onclick="adminDeleteFileConfirm('${f.path}','${f.name}')" data-tip="Delete" title="Delete">⊗</button>
         </div>
       </td>
     </tr>`;
   });
 
-  tbody.innerHTML = html || '<tr><td colspan="4" style="color:#444;font-size:11px;">No files in this directory.</td></tr>';
+  tbody.innerHTML = html ||
+    '<tr><td colspan="4" style="color:#333;font-size:11px;padding:14px 8px;">No files found.</td></tr>';
 
   // Update stats
-  const st = document.getElementById('stat-files');   if (st) st.textContent = files.length;
-  const sh = document.getElementById('stat-hidden');  if (sh) sh.textContent = hiddenCount;
-  const sr = document.getElementById('stat-repo');    if (sr) {
-    const user = localStorage.getItem('__gh_user__') || '?';
-    const repo = localStorage.getItem('__gh_repo__') || '?';
-    sr.textContent = user + '/' + repo;
+  const st = document.getElementById('stat-files');  if (st) st.textContent = files.length;
+  const sh = document.getElementById('stat-hidden'); if (sh) sh.textContent = hiddenCount;
+  const sr = document.getElementById('stat-repo');
+  if (sr) {
+    const u = localStorage.getItem('__gh_user__') || '?';
+    const r = localStorage.getItem('__gh_repo__') || '?';
+    sr.textContent = u + '/' + r;
   }
 };
 
-// Delete with confirm modal
 window.adminDeleteFileConfirm = function(path, name) {
-  openConfirmModal(`Delete file: ${name}\nPath: ${path}\n\nThis action cannot be undone.`, () => {
+  openConfirmModal(`Delete: ${name}\nPath: ${path}\n\nCannot be undone.`, () => {
     if (typeof adminDeleteFile === 'function') adminDeleteFile(path, name);
   });
 };
 
-// Toast helper (may already exist in main.js)
 window.showToastMsg = function(msg) {
   const t = document.getElementById('toast');
   if (!t) return;
@@ -1253,25 +1652,23 @@ window.showToastMsg = function(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 };
 
-// Overlay close on ESC
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-  }
+// ESC closes modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape')
+    document.querySelectorAll('.modal-overlay.active')
+            .forEach(m => m.classList.remove('active'));
 });
 
-// Close modal on backdrop click
-document.querySelectorAll && document.addEventListener('DOMContentLoaded', () => {
+// Backdrop click closes modal
+document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
+    overlay.addEventListener('click', e => {
       if (e.target === overlay) overlay.classList.remove('active');
     });
   });
 });
 </script>
 
-<!-- Main app -->
 <script src="main.js"></script>
-
 </body>
 </html>
