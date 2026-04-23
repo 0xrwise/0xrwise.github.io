@@ -5,12 +5,13 @@
 
 // [!] Isi dengan kredensial Firebase kamu
 export const firebaseConfig = {
-  apiKey: "API_KEY_KAMU",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "AIzaSyBM_d3CKT6aTfX9mp4grf8jn-hV_M9rzHI",
+  authDomain: "xrwise-site.firebaseapp.com",
+  projectId: "xrwise-site",
+  storageBucket: "xrwise-site.firebasestorage.app",
+  messagingSenderId: "441688287794",
+  appId: "1:441688287794:web:ef0d355386820f13912a2b",
+  measurementId: "G-33L6SX3XZJ"
 };
 
 // [!] Endpoint untuk tool spionisme/OSINT
