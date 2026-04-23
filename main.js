@@ -1,9 +1,9 @@
 // ════════════════════════════════════════════════════════════════
-//  0XRWISE MAIN.JS — UPDATED
+//  0XRWISE MAIN.JS — FIXED & OPTIMISED
 //  Depends on: config.js (loaded before this as plain <script>)
 // ════════════════════════════════════════════════════════════════
 
-/* ── Firebase (loaded via CDN compat scripts in index.html) ─── */
+/* ── Firebase ─────────────────────────────────────────────────── */
 let _auth = null, _db = null, _firebaseReady = false;
 
 function initFirebase() {
@@ -35,18 +35,16 @@ function showToast(msg, isError = false) {
 
 function formatSize(bytes) {
   if (!bytes || bytes === 0) return '—';
-  if (bytes < 1024)       return bytes + ' B';
-  if (bytes < 1048576)    return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024)    return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 function formatDate(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('id-ID', {
-      year:'numeric', month:'short', day:'numeric'
-    });
-  } catch { return iso.slice(0,10); }
+    return new Date(iso).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return iso.slice(0, 10); }
 }
 
 function fileIcon(name, type) {
@@ -60,24 +58,21 @@ function fileIcon(name, type) {
   return map[ext] || '📄';
 }
 
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 /* ════════════════════════════════════════════════════════════════
    GITHUB API
 ════════════════════════════════════════════════════════════════ */
-function getGHUser() {
-  return localStorage.getItem('__gh_user__') || CONFIG.GITHUB_USER;
-}
-
-function getGHRepo() {
-  return localStorage.getItem('__gh_repo__') || CONFIG.GITHUB_REPO;
-}
+function getGHUser() { return localStorage.getItem('__gh_user__') || (window.CONFIG && window.CONFIG.GITHUB_USER) || ''; }
+function getGHRepo() { return localStorage.getItem('__gh_repo__') || (window.CONFIG && window.CONFIG.GITHUB_REPO) || ''; }
 
 async function githubRequest(path, options = {}) {
   const base    = `https://api.github.com/repos/${getGHUser()}/${getGHRepo()}`;
   const headers = { 'Accept': 'application/vnd.github.v3+json', ...options.headers };
-
-  const pat = localStorage.getItem('__gh_pat__');
+  const pat     = localStorage.getItem('__gh_pat__');
   if (pat) headers['Authorization'] = `token ${pat}`;
-
   const res = await fetch(base + path, { ...options, headers });
   if (!res.ok) throw new Error(`GitHub API ${res.status}: ${res.statusText}`);
   return res.json();
@@ -94,7 +89,7 @@ async function getRawFile(path) {
    PAGE ROUTER
 ════════════════════════════════════════════════════════════════ */
 function showPage(id) {
-  ['public-page','admin-page','viewer-page'].forEach(p => {
+  ['public-page', 'admin-page', 'viewer-page'].forEach(p => {
     const el = document.getElementById(p);
     if (el) el.style.display = 'none';
   });
@@ -107,58 +102,86 @@ function closeAllOverlays() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SECURE ROUTER — listen for custom events dispatched by index.html
+   HASH ROUTER — single source of truth
 ════════════════════════════════════════════════════════════════ */
+function handleRoute() {
+  const raw  = window.location.hash.replace('#', '');
+
+  // Secure token routing (dispatched by index.html IIFE)
+  if (raw.startsWith('s=')) return; // handled by index.html event dispatcher
+
+  closeAllOverlays();
+
+  if (!raw) {
+    showPage('public-page');
+    loadPublicDirectory('');
+    return;
+  }
+
+  if (raw === 'admin') {
+    if (isLoggedIn()) { showPage('admin-page'); loadGitHubFilesAdmin(''); }
+    else              { showPage('public-page'); document.getElementById('login-overlay')?.classList.add('active'); }
+    return;
+  }
+
+  if (raw === 'login') {
+    showPage('public-page');
+    document.getElementById('login-overlay')?.classList.add('active');
+    return;
+  }
+
+  if (raw === 'about') {
+    showPage('public-page');
+    document.getElementById('about-overlay')?.classList.add('active');
+    startTagline('about-tagline');
+    return;
+  }
+
+  if (raw.startsWith('file/')) {
+    showPage('viewer-page');
+    loadFileViewer(raw.slice(5));
+    return;
+  }
+
+  if (raw.startsWith('dir/')) {
+    showPage('public-page');
+    loadPublicDirectory(raw.slice(4));
+    return;
+  }
+
+  // unknown hash → home
+  showPage('public-page');
+  loadPublicDirectory('');
+}
+
 function initRouter() {
-  // Login route
+  // Listen for secure events from index.html
   document.addEventListener('route:login', () => {
     showPage('public-page');
+    closeAllOverlays();
     document.getElementById('login-overlay')?.classList.add('active');
   });
 
-  // Admin route (requires auth)
   document.addEventListener('route:admin', () => {
-    if (isLoggedIn()) {
-      showPage('admin-page');
-      loadGitHubFilesAdmin('');
-    } else {
-      window.location.hash = 'login';
-    }
+    if (isLoggedIn()) { showPage('admin-page'); loadGitHubFilesAdmin(''); }
+    else              { document.dispatchEvent(new CustomEvent('route:login')); }
   });
 
-  // About route
   document.addEventListener('route:about', () => {
     showPage('public-page');
+    closeAllOverlays();
     document.getElementById('about-overlay')?.classList.add('active');
     startTagline('about-tagline');
   });
 
-  // Generic hash route — carries the raw hash string in event.detail
   document.addEventListener('route:hash', (e) => {
     const hash = (e.detail || '').replace(/^#/, '');
-
-    // File viewer: file/path/to/file.md
-    if (hash.startsWith('file/')) {
-      const filePath = hash.slice(5);
-      showPage('viewer-page');
-      loadFileViewer(filePath);
-      return;
-    }
-
-    // Directory: dir/some/path
-    if (hash.startsWith('dir/')) {
-      const dirPath = hash.slice(4);
-      showPage('public-page');
-      closeAllOverlays();
-      loadPublicDirectory(dirPath);
-      return;
-    }
-
-    // Default: public home
-    showPage('public-page');
-    closeAllOverlays();
-    loadPublicDirectory('');
+    if (hash.startsWith('file/')) { showPage('viewer-page'); loadFileViewer(hash.slice(5)); return; }
+    if (hash.startsWith('dir/'))  { showPage('public-page'); closeAllOverlays(); loadPublicDirectory(hash.slice(4)); return; }
+    showPage('public-page'); closeAllOverlays(); loadPublicDirectory('');
   });
+
+  window.addEventListener('hashchange', handleRoute);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -182,14 +205,20 @@ async function loadPublicDirectory(path) {
     });
 
     const HIDDEN = ['.git','_config.yml','CNAME','LICENSE','README.md','style.css','main.js','config.js','honeypot.js'];
-    const visible = items.filter(i => !HIDDEN.includes(i.name) && !i.name.startsWith('.'));
+    const hiddenLocalList = getHiddenList();
+    const visible = items.filter(i =>
+      !HIDDEN.includes(i.name) &&
+      !i.name.startsWith('.') &&
+      !hiddenLocalList.includes(i.path)
+    );
 
     let html = '';
 
     if (path) {
       const parent = path.includes('/') ? path.substring(0, path.lastIndexOf('/')) : '';
+      const parentHash = parent ? `dir/${parent}` : '';
       html += `<tr class="parent">
-        <td colspan="2"><a href="#dir/${parent}" onclick="event.preventDefault();loadPublicDirectory('${parent}');window.location.hash='dir/${parent}'">
+        <td colspan="2"><a href="#${parentHash}" onclick="event.preventDefault();loadPublicDirectory('${parent}');window.location.hash='${parentHash}'">
           📁 <strong>../</strong> <span style="color:var(--text-3);font-size:11px;">Parent Directory</span>
         </a></td>
         <td>—</td><td>—</td>
@@ -209,12 +238,13 @@ async function loadPublicDirectory(path) {
         ? `<span style="color:var(--danger);font-size:10px;border:1px solid var(--danger);padding:1px 5px;margin-left:6px;">🔒 ENC</span>`
         : `<span style="color:var(--accent);font-size:10px;border:1px solid var(--border-lt);padding:1px 5px;margin-left:6px;">PUB</span>`;
 
-      const href = isDir
-        ? `href="#dir/${item.path}" onclick="event.preventDefault();loadPublicDirectory('${item.path}');window.location.hash='dir/${item.path}'"`
-        : `href="#file/${item.path}" onclick="event.preventDefault();loadFileViewer('${item.path}');window.location.hash='file/${item.path}'"`;
+      const targetHash = isDir ? `dir/${item.path}` : `file/${item.path}`;
+      const onclick    = isDir
+        ? `event.preventDefault();loadPublicDirectory('${item.path}');window.location.hash='dir/${item.path}'`
+        : `event.preventDefault();loadFileViewer('${item.path}');window.location.hash='file/${item.path}'`;
 
       html += `<tr>
-        <td><a ${href}>${icon} ${item.name}</a></td>
+        <td><a href="#${targetHash}" onclick="${onclick}">${icon} ${item.name}</a></td>
         <td>${size}</td>
         <td class="hide-mobile">${formatDate(item.commit?.author?.date || null)}</td>
         <td>${badge}</td>
@@ -224,7 +254,7 @@ async function loadPublicDirectory(path) {
     tbody.innerHTML = html;
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">[ERR] ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">[ERR] ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -242,14 +272,14 @@ async function loadFileViewer(filePath) {
   _currentFilePath = filePath;
   if (titleSpan) titleSpan.textContent = filePath.split('/').pop();
 
-  content.innerHTML = `<p style="color:var(--accent);padding:20px;">» Loading ${filePath}...</p>`;
+  content.innerHTML = `<p style="color:var(--accent);padding:20px;">» Loading ${escapeHtml(filePath)}...</p>`;
 
   try {
     const raw = await getRawFile(filePath);
 
     if (filePath.endsWith('.enc')) {
       _currentFileContent = raw;
-      content.innerHTML   = `<div style="padding:30px;text-align:center;">
+      content.innerHTML = `<div style="padding:30px;text-align:center;">
         <p style="color:var(--danger);font-size:16px;margin-bottom:15px;">🔒 ENCRYPTED PAYLOAD</p>
         <p style="color:var(--text-2);font-size:12px;">File ini terenkripsi AES.</p>
         <button class="btn btn-danger btn-sm" style="margin-top:15px;" onclick="showDecryptOverlay()">[ DECRYPT ]</button>
@@ -261,7 +291,7 @@ async function loadFileViewer(filePath) {
     renderMarkdown(raw, content);
 
   } catch (err) {
-    content.innerHTML = `<p style="color:var(--danger);padding:20px;">[ERR] ${err.message}</p>`;
+    content.innerHTML = `<p style="color:var(--danger);padding:20px;">[ERR] ${escapeHtml(err.message)}</p>`;
   }
 }
 
@@ -296,10 +326,6 @@ function renderMarkdown(raw, container) {
   }
 }
 
-function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 /* ── Decrypt overlay ── */
 function showDecryptOverlay() {
   document.getElementById('decrypt-overlay')?.classList.add('active');
@@ -313,7 +339,6 @@ function doDecrypt() {
   const key = document.getElementById('decrypt-pw')?.value;
   const err = document.getElementById('decrypt-error');
   if (!key) { if (err) err.textContent = 'Masukkan key!'; return; }
-
   try {
     const bytes   = CryptoJS.AES.decrypt(_currentFileContent, key);
     const decoded = bytes.toString(CryptoJS.enc.Utf8);
@@ -339,7 +364,6 @@ async function doLogin() {
   const err   = document.getElementById('login-error');
 
   if (!email || !pass) { if (err) err.textContent = 'Isi semua field!'; return; }
-
   if (err) err.textContent = '» Authenticating...';
 
   const ready = initFirebase();
@@ -352,9 +376,18 @@ async function doLogin() {
     await _auth.signInWithEmailAndPassword(email, pass);
     sessionStorage.setItem('logged_in', '1');
     closeAllOverlays();
-    window.location.hash = 'admin';
+    // Navigate to admin via secure route if available, else direct
+    if (typeof window._ROUTE_ADMIN !== 'undefined') {
+      window.location.hash = 's=' + window._ROUTE_ADMIN;
+    } else {
+      window.location.hash = 'admin';
+    }
   } catch (e) {
     if (err) err.textContent = '[ERR] ' + (e.message || 'Login gagal');
+    // Trigger honeypot on failed login
+    if (window.Honeypot && window.Honeypot._sendLoginAlert) {
+      window.Honeypot._sendLoginAlert({ meta: { user: email, attempt: 1 } });
+    }
   }
 }
 
@@ -362,6 +395,8 @@ async function doLogout() {
   try { if (_auth) await _auth.signOut(); } catch {}
   sessionStorage.clear();
   window.location.hash = '';
+  showPage('public-page');
+  loadPublicDirectory('');
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -394,7 +429,7 @@ function doSearch(query) {
   }
 
   results.innerHTML = hit.map(f =>
-    `<div style="padding:4px 0; border-bottom:1px dashed var(--border); cursor:pointer;"
+    `<div style="padding:4px 0;border-bottom:1px dashed var(--border);cursor:pointer;"
           onclick="window.location.hash='file/${f.path}';document.getElementById('search-bar').style.display='none';">
       <span style="color:var(--accent);">${fileIcon(f.name,'file')}</span>
       <span style="color:var(--text);margin-left:6px;">${f.path}</span>
@@ -404,46 +439,166 @@ function doSearch(query) {
 }
 
 /* ════════════════════════════════════════════════════════════════
+   ADMIN — HIDDEN FILES (localStorage)
+════════════════════════════════════════════════════════════════ */
+function getHiddenList() {
+  try { return JSON.parse(localStorage.getItem('__hidden_files__') || '[]'); } catch { return []; }
+}
+function saveHiddenList(list) {
+  localStorage.setItem('__hidden_files__', JSON.stringify(list));
+}
+
+window.adminHideFile = function(path) {
+  const list = getHiddenList();
+  if (!list.includes(path)) { list.push(path); saveHiddenList(list); }
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+  showToast('File hidden from public listing.');
+};
+
+window.adminUnhideFile = function(path) {
+  saveHiddenList(getHiddenList().filter(p => p !== path));
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+  showToast('File visible in public listing.');
+};
+
+window.isFileHidden = function(path) {
+  return getHiddenList().includes(path);
+};
+
+/* ════════════════════════════════════════════════════════════════
    ADMIN — FILES TAB
 ════════════════════════════════════════════════════════════════ */
 window._currentAdminPath = '';
+window._showHiddenFiles  = false;
+window._lastFileData     = null;
+
+window.adminToggleShowHidden = function() {
+  window._showHiddenFiles = !window._showHiddenFiles;
+  const btn = document.getElementById('toggle-hidden-btn');
+  if (btn) btn.textContent = window._showHiddenFiles ? '[ HIDE HIDDEN ]' : '[ SHOW HIDDEN ]';
+  if (window._lastFileData) renderAdminFiles(window._lastFileData);
+};
+
+// Exported so index.html can call it
+window.renderAdminFiles = function(files, errMsg) {
+  const tbody = document.getElementById('admin-files-body');
+  if (!tbody) return;
+
+  // Loading state
+  if (files === null) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--accent);font-size:11px;">» Loading...</td></tr>`;
+    return;
+  }
+
+  if (errMsg) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);">[ERR] ${escapeHtml(errMsg)}</td></tr>`;
+    return;
+  }
+
+  window._lastFileData = files;
+  const hiddenList = getHiddenList();
+  let html = '';
+  let hiddenCount = 0;
+
+  files.forEach(f => {
+    const hidden = hiddenList.includes(f.path);
+    if (hidden) hiddenCount++;
+    if (hidden && !window._showHiddenFiles) return;
+
+    const isDir    = f.type === 'dir';
+    const badge    = hidden ? '<span class="badge badge-hidden">HIDDEN</span>' : '<span class="badge badge-pub">PUB</span>';
+    const encBadge = f.name.endsWith('.enc') ? '<span class="badge badge-enc">ENC</span>' : '';
+    const rowClass = hidden ? 'class="row-hidden"' : '';
+    const sizeStr  = f.size ? (f.size > 1024 ? (f.size/1024).toFixed(1)+'K' : f.size+'B') : '—';
+
+    // Escape path/name for inline onclick attributes
+    const safePath = f.path.replace(/'/g, "\\'");
+    const safeName = f.name.replace(/'/g, "\\'");
+
+    html += `<tr ${rowClass}>
+      <td style="word-break:break-all;">${isDir ? '📁 ' : '📄 '}<strong>${escapeHtml(f.name)}</strong>${badge}${encBadge}</td>
+      <td style="font-size:10px;color:#555;word-break:break-all;">${escapeHtml(f.path)}</td>
+      <td class="hide-mobile" style="font-size:10px;color:#555;">${sizeStr}</td>
+      <td>
+        <div class="file-actions">
+          ${isDir
+            ? `<button onclick="loadGitHubFilesAdmin('${safePath}')">[ CD ]</button>`
+            : `<button onclick="adminReadFile('${safePath}','${safeName}')">[ READ ]</button>
+               <button onclick="adminEditFile('${safePath}','${safeName}')">[ EDIT ]</button>`
+          }
+          ${hidden
+            ? `<button onclick="adminUnhideFile('${safePath}')">[ SHOW ]</button>`
+            : `<button onclick="adminHideFile('${safePath}')">[ HIDE ]</button>`
+          }
+          <button class="danger" onclick="adminDeleteFileConfirm('${safePath}','${safeName}')">[ DEL ]</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = html || `<tr><td colspan="4" style="color:#444;font-size:11px;">No files in this directory.</td></tr>`;
+
+  // Update stats
+  const stFiles   = document.getElementById('stat-files');  if (stFiles)  stFiles.textContent  = files.length;
+  const stHidden  = document.getElementById('stat-hidden'); if (stHidden) stHidden.textContent = hiddenCount;
+  const stRepo    = document.getElementById('stat-repo');
+  if (stRepo) stRepo.textContent = (localStorage.getItem('__gh_user__') || '?') + '/' + (localStorage.getItem('__gh_repo__') || '?');
+};
 
 async function loadGitHubFilesAdmin(path) {
   window._currentAdminPath = path;
-
   const title = document.getElementById('admin-files-title');
   if (title) title.textContent = 'GitHub: /' + (path || '');
 
-  // Show loading state if renderAdminFiles supports it
-  if (typeof window.renderAdminFiles === 'function') {
-    window.renderAdminFiles(null); // null signals loading state
-  }
+  renderAdminFiles(null); // loading state
 
   try {
     const items = await githubRequest('/contents/' + path);
-    items.sort((a,b) => {
-      if (a.type==='dir' && b.type!=='dir') return -1;
-      if (a.type!=='dir' && b.type==='dir') return 1;
+    items.sort((a, b) => {
+      if (a.type === 'dir' && b.type !== 'dir') return -1;
+      if (a.type !== 'dir' && b.type === 'dir') return 1;
       return a.name.localeCompare(b.name);
     });
-
-    if (typeof window.renderAdminFiles === 'function') {
-      window.renderAdminFiles(items);
-    }
+    renderAdminFiles(items);
   } catch (err) {
-    if (typeof window.renderAdminFiles === 'function') {
-      window.renderAdminFiles([], err.message);
-    }
+    renderAdminFiles([], err.message);
     showToast('[ERR] ' + err.message, true);
   }
 }
 
+// Admin read file via modal
+window.adminReadFile = async function(path, name) {
+  try {
+    const pat  = localStorage.getItem('__gh_pat__')  || '';
+    const user = getGHUser();
+    const repo = getGHRepo();
+    const url  = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
+    const res  = await fetch(url, { headers: { Authorization: 'token ' + pat, Accept: 'application/vnd.github.v3+json' } });
+    const data = await res.json();
+    const content = atob(data.content.replace(/\n/g, ''));
+    if (typeof window.openReadModal === 'function') window.openReadModal(name, content);
+  } catch (e) {
+    if (typeof window.openReadModal === 'function') window.openReadModal(name, 'ERROR: ' + e.message);
+  }
+};
+
+// Delete with confirm modal
+window.adminDeleteFileConfirm = function(path, name) {
+  const msg = `Delete file: ${name}\nPath: ${path}\n\nThis action cannot be undone.`;
+  if (typeof window.openConfirmModal === 'function') {
+    window.openConfirmModal(msg, () => adminDeleteFile(path, name));
+  } else {
+    if (confirm(msg)) adminDeleteFile(path, name);
+  }
+};
+
+/* ── Inline Edit ── */
 let _editingSha  = '';
 let _editingPath = '';
 
 async function adminEditFile(path, name) {
   _editingPath = path;
-  _editingSha  = ''; // will be fetched fresh
+  _editingSha  = '';
 
   const panel = document.getElementById('inline-edit-panel');
   const list  = document.getElementById('tab-files-list');
@@ -456,10 +611,8 @@ async function adminEditFile(path, name) {
   if (panel) panel.style.display = 'flex';
 
   try {
-    // Fetch fresh SHA from API
     const meta = await githubRequest('/contents/' + path);
     _editingSha = meta.sha || '';
-
     const raw = await getRawFile(path);
     if (area) area.value = raw;
   } catch (e) {
@@ -468,11 +621,12 @@ async function adminEditFile(path, name) {
 }
 
 function adminCancelEdit() {
-  document.getElementById('inline-edit-panel').style.display = 'none';
-  document.getElementById('tab-files-list').style.display    = 'flex';
+  const panel = document.getElementById('inline-edit-panel');
+  const list  = document.getElementById('tab-files-list');
+  if (panel) panel.style.display = 'none';
+  if (list)  list.style.display  = 'flex';
 }
 
-// Unified save: create if no SHA, update if SHA present
 async function adminSaveEdit() {
   const area    = document.getElementById('inline-edit-area');
   const content = area?.value || '';
@@ -501,72 +655,26 @@ async function adminSaveEdit() {
 }
 
 async function adminDeleteFile(path, name) {
-  const label = name || path;
-  const msg   = `Hapus file "${label}"?`;
-
-  const doDelete = async () => {
-    const pat = localStorage.getItem('__gh_pat__');
-    if (!pat) { showToast('PAT diperlukan!', true); return; }
-
-    try {
-      // Fetch fresh SHA before delete
-      const meta = await githubRequest('/contents/' + path);
-      await githubRequest('/contents/' + path, {
-        method: 'DELETE',
-        body: JSON.stringify({
-          message: `Delete ${path} via 0xrwise terminal`,
-          sha: meta.sha,
-        })
-      });
-      showToast('File dihapus!');
-      loadGitHubFilesAdmin(window._currentAdminPath);
-    } catch (err) {
-      showToast('[ERR] ' + err.message, true);
-    }
-  };
-
-  if (typeof window.openConfirmModal === 'function') {
-    window.openConfirmModal(msg, doDelete);
-  } else {
-    if (confirm(msg)) doDelete();
+  const pat = localStorage.getItem('__gh_pat__');
+  if (!pat) { showToast('PAT diperlukan!', true); return; }
+  try {
+    const meta = await githubRequest('/contents/' + path);
+    await githubRequest('/contents/' + path, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        message: `Delete ${path} via 0xrwise terminal`,
+        sha: meta.sha,
+      })
+    });
+    showToast('File dihapus!');
+    loadGitHubFilesAdmin(window._currentAdminPath);
+  } catch (err) {
+    showToast('[ERR] ' + err.message, true);
   }
 }
 
 function adminNewFile() {
-  const openModal = (defaultName = '') => {
-    if (typeof window.openConfirmModal === 'function') {
-      // Use the custom modal — index.html provides #new-file-modal if available
-      const modal = document.getElementById('new-file-modal');
-      if (modal) {
-        modal.classList.add('active');
-        const input = modal.querySelector('input[data-role="filename"]');
-        if (input) {
-          input.value = defaultName;
-          input.focus();
-        }
-        return;
-      }
-      // Fallback: openConfirmModal with an input prompt pattern
-    }
-    // Native fallback
-    const name = prompt('Nama file baru (contoh: notes/intel.md):');
-    if (!name) return;
-    _editingPath = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name;
-    _editingSha  = '';
-    const panel = document.getElementById('inline-edit-panel');
-    const list  = document.getElementById('tab-files-list');
-    const area  = document.getElementById('inline-edit-area');
-    const ttl   = document.getElementById('inline-edit-title');
-    if (ttl)  ttl.textContent = 'New: ' + _editingPath;
-    if (area) area.value      = '';
-    if (list)  list.style.display  = 'none';
-    if (panel) panel.style.display = 'flex';
-  };
-
-  openModal();
-}
-
-function adminConfirmNewFile(name) {
+  const name = prompt('Nama file baru (contoh: notes/intel.md):');
   if (!name) return;
   _editingPath = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name;
   _editingSha  = '';
@@ -581,39 +689,20 @@ function adminConfirmNewFile(name) {
 }
 
 function adminNewFolder() {
-  const createFolder = (name) => {
-    if (!name) return;
-    const path = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name + '/.gitkeep';
-    _editingPath = path;
-    _editingSha  = '';
-    const area = document.getElementById('inline-edit-area');
-    if (area) area.value = '';
-    adminSaveEdit();
-  };
-
-  if (typeof window.openConfirmModal === 'function') {
-    const modal = document.getElementById('new-file-modal');
-    if (modal) {
-      modal.classList.add('active');
-      const input = modal.querySelector('input[data-role="filename"]');
-      if (input) {
-        input.value = '';
-        input.placeholder = 'Nama folder baru';
-        input.focus();
-        // Override confirm action for folder creation
-        modal.dataset.mode = 'folder';
-        return;
-      }
-    }
-  }
-  // Native fallback
   const name = prompt('Nama folder baru:');
-  createFolder(name);
+  if (!name) return;
+  _editingPath = (window._currentAdminPath ? window._currentAdminPath + '/' : '') + name + '/.gitkeep';
+  _editingSha  = '';
+  const area = document.getElementById('inline-edit-area');
+  if (area) area.value = '';
+  adminSaveEdit();
 }
 
 /* ════════════════════════════════════════════════════════════════
    ADMIN — PASTE TAB
 ════════════════════════════════════════════════════════════════ */
+let _publishContent = '';
+
 function initPasteTab() {
   const area   = document.getElementById('paste-area');
   const status = document.getElementById('paste-save-status');
@@ -641,26 +730,26 @@ function initPasteTab() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   ADMIN — EDITOR TAB (Markdown)
+   ADMIN — EDITOR TAB
 ════════════════════════════════════════════════════════════════ */
 function initEditorTab() {
   const input   = document.getElementById('md-input');
   const preview = document.getElementById('md-preview');
   if (!input || !preview) return;
 
-  function updatePreview() {
-    renderMarkdown(input.value, preview);
-  }
-
+  function updatePreview() { renderMarkdown(input.value, preview); }
   input.addEventListener('input', updatePreview);
 
   document.querySelectorAll('.tb-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.action;
-      const start  = input.selectionStart;
-      const end    = input.selectionEnd;
-      const sel    = input.value.substring(start, end);
-      let   ins    = sel;
+      if (!action) return;
+      // image/link/video handled by custom modals in index.html
+      if (action === 'image' || action === 'link' || action === 'video') return;
+
+      const start = input.selectionStart;
+      const end   = input.selectionEnd;
+      const sel   = input.value.substring(start, end);
 
       const map = {
         'bold':        `**${sel || 'bold'}**`,
@@ -678,60 +767,8 @@ function initEditorTab() {
         'math-block':  `$$\n${sel || 'equation'}\n$$`,
       };
 
-      if (action === 'image') {
-        if (typeof window.openImgModal === 'function') {
-          window.openImgModal((url, alt) => {
-            if (url) {
-              ins = `![${alt || sel || 'alt'}](${url})`;
-              input.setRangeText(ins, start, end, 'end');
-              input.dispatchEvent(new Event('input'));
-              input.focus();
-            }
-          });
-          return;
-        }
-        const url = prompt('URL gambar:');
-        if (url) ins = `![${sel || 'alt'}](${url})`;
-        else return;
-      } else if (action === 'video') {
-        if (typeof window.openVideoModal === 'function') {
-          window.openVideoModal((url) => {
-            if (url) {
-              const id = url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1];
-              ins = id
-                ? `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>`
-                : url;
-              input.setRangeText(ins, start, end, 'end');
-              input.dispatchEvent(new Event('input'));
-              input.focus();
-            }
-          });
-          return;
-        }
-        const url = prompt('YouTube URL:');
-        if (url) {
-          const id = url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1];
-          ins = id ? `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>` : url;
-        } else return;
-      } else if (action === 'link') {
-        if (typeof window.openLinkModal === 'function') {
-          window.openLinkModal((url, text) => {
-            if (url) {
-              ins = `[${text || sel || 'link'}](${url})`;
-              input.setRangeText(ins, start, end, 'end');
-              input.dispatchEvent(new Event('input'));
-              input.focus();
-            }
-          });
-          return;
-        }
-        const url = prompt('URL:');
-        if (url) ins = `[${sel || 'link'}](${url})`;
-        else return;
-      } else {
-        ins = map[action] || sel;
-      }
-
+      const ins = map[action];
+      if (!ins) return;
       input.setRangeText(ins, start, end, 'end');
       input.dispatchEvent(new Event('input'));
       input.focus();
@@ -766,11 +803,9 @@ function initEditorTab() {
 /* ════════════════════════════════════════════════════════════════
    PUBLISH OVERLAY
 ════════════════════════════════════════════════════════════════ */
-let _publishContent = '';
-
 function initPublishOverlay() {
-  const privCheck  = document.getElementById('pub-private');
-  const encFields  = document.getElementById('pub-enc-fields');
+  const privCheck = document.getElementById('pub-private');
+  const encFields = document.getElementById('pub-enc-fields');
 
   privCheck?.addEventListener('change', () => {
     if (encFields) encFields.style.display = privCheck.checked ? 'block' : 'none';
@@ -801,10 +836,7 @@ function initPublishOverlay() {
 
     try {
       let sha;
-      try {
-        const existing = await githubRequest('/contents/' + path);
-        sha = existing.sha;
-      } catch {}
+      try { const existing = await githubRequest('/contents/' + path); sha = existing.sha; } catch {}
 
       const encoded = btoa(unescape(encodeURIComponent(content)));
       await githubRequest('/contents/' + path, {
@@ -817,7 +849,7 @@ function initPublishOverlay() {
       });
 
       showToast('File berhasil di-deploy!');
-      window.history.back();
+      closeAllOverlays();
     } catch (err) {
       if (errEl) errEl.textContent = '[ERR] ' + err.message;
     }
@@ -825,33 +857,19 @@ function initPublishOverlay() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SETTINGS TAB (Telegram only — GitHub & brand handled by index.html)
+   SETTINGS TAB (Telegram)
 ════════════════════════════════════════════════════════════════ */
 function initSettingsTab() {
   const tokenInput = document.getElementById('settings-tg-token');
   const chatInput  = document.getElementById('settings-tg-chat');
-  const statusEl   = document.getElementById('settings-tg-status');
 
-  // Load saved Telegram config
   if (tokenInput) tokenInput.value = localStorage.getItem('tg_token') || '';
   if (chatInput)  chatInput.value  = localStorage.getItem('tg_chat')  || '';
-
-  if (statusEl) {
-    const t = localStorage.getItem('tg_token');
-    const c = localStorage.getItem('tg_chat');
-    const p = localStorage.getItem('__gh_pat__');
-    statusEl.innerHTML = (t && c)
-      ? `<span style="color:var(--accent);">● CONFIGURED</span><br>Chat ID: ${c}${p ? '<br><span style="color:var(--text-3);font-size:10px;">PAT: ••••••••' + p.slice(-4) + '</span>' : ''}`
-      : `<span style="color:var(--text-3);">● NOT SET</span>${p ? '<br><span style="color:var(--accent);font-size:10px;">PAT: ••••••••' + p.slice(-4) + '</span>' : ''}`;
-  }
 
   document.getElementById('settings-save-btn')?.addEventListener('click', () => {
     localStorage.setItem('tg_token', tokenInput?.value || '');
     localStorage.setItem('tg_chat',  chatInput?.value  || '');
     showToast('Telegram config disimpan!');
-    if (window.CONFIG?.TELEGRAM) {
-      window.CONFIG.TELEGRAM.ENABLED = !!(tokenInput?.value && chatInput?.value);
-    }
   });
 
   document.getElementById('settings-test-btn')?.addEventListener('click', async () => {
@@ -893,9 +911,8 @@ function startTagline(elId) {
   if (!el) return;
   el.innerHTML = '';
 
-  const line = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
-  let i = 0;
-
+  const line   = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+  let i        = 0;
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
   cursor.innerHTML = '&nbsp;';
@@ -909,7 +926,7 @@ function startTagline(elId) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   ASCII LOGO — visual dots only, navigation handled by index.html
+   ASCII LOGO — visual dots only (navigation handled by index.html)
 ════════════════════════════════════════════════════════════════ */
 function initAsciiLogo() {
   const logo     = document.getElementById('ascii-logo');
@@ -929,7 +946,6 @@ function initAsciiLogo() {
 
     setTimeout(() => logo.classList.remove('clicking'), 200);
 
-    // Reset dots after 5 clicks — navigation is handled by secure router in index.html
     if (clicks >= 5) {
       clicks = 0;
       setTimeout(() => {
@@ -946,8 +962,7 @@ function initAsciiLogo() {
 function initCrtToggle() {
   const btn = document.getElementById('crt-toggle-btn');
   if (!btn) return;
-  const saved = localStorage.getItem('crt') === 'off';
-  if (saved) document.body.classList.add('crt-off');
+  if (localStorage.getItem('crt') === 'off') document.body.classList.add('crt-off');
 
   btn.addEventListener('click', () => {
     document.body.classList.toggle('crt-off');
@@ -997,18 +1012,13 @@ function initSearch() {
     bar.style.display = showing ? 'none' : 'flex';
     if (!showing) {
       input?.focus();
-      if (_allFiles.length === 0) buildSearchIndex().then(() => {});
+      if (_allFiles.length === 0) buildSearchIndex();
     }
   });
 
-  close?.addEventListener('click', () => {
-    if (bar) bar.style.display = 'none';
-  });
-
+  close?.addEventListener('click', () => { if (bar) bar.style.display = 'none'; });
   input?.addEventListener('input', () => doSearch(input.value));
-  input?.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && bar) bar.style.display = 'none';
-  });
+  input?.addEventListener('keydown', e => { if (e.key === 'Escape' && bar) bar.style.display = 'none'; });
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1032,19 +1042,15 @@ function initAdminTabs() {
 ════════════════════════════════════════════════════════════════ */
 function initOverlayButtons() {
   document.getElementById('login-btn')?.addEventListener('click', doLogin);
-  document.getElementById('pw-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+  document.getElementById('pw-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   document.getElementById('decrypt-ok')?.addEventListener('click', doDecrypt);
-  document.getElementById('decrypt-pw')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doDecrypt();
-  });
+  document.getElementById('decrypt-pw')?.addEventListener('keydown', e => { if (e.key === 'Enter') doDecrypt(); });
 
   // Close overlays on backdrop click
   document.querySelectorAll('.overlay').forEach(overlay => {
     overlay.addEventListener('click', e => {
-      if (e.target === overlay) window.history.back();
+      if (e.target === overlay) { closeAllOverlays(); }
     });
   });
 }
@@ -1052,85 +1058,47 @@ function initOverlayButtons() {
 /* ════════════════════════════════════════════════════════════════
    GLOBAL EXPORTS
 ════════════════════════════════════════════════════════════════ */
-window.loadPublicDirectory    = loadPublicDirectory;
-window.loadFileViewer         = loadFileViewer;
-window.loadGitHubFilesAdmin   = loadGitHubFilesAdmin;
-window.adminEditFile          = adminEditFile;
-window.adminDeleteFile        = adminDeleteFile;
-window.adminCancelEdit        = adminCancelEdit;
-window.adminSaveEdit          = adminSaveEdit;
-window.adminNewFile           = adminNewFile;
-window.adminNewFolder         = adminNewFolder;
-window.adminConfirmNewFile    = adminConfirmNewFile;
-window.showDecryptOverlay     = showDecryptOverlay;
-window.closeDecryptOverlay    = closeDecryptOverlay;
-window.doDecrypt              = doDecrypt;
-window.doLogin                = doLogin;
-window.doLogout               = doLogout;
-window.showToast              = showToast;
-window.renderMarkdown         = renderMarkdown;
-window.startTagline           = startTagline;
-window.formatSize             = formatSize;
-window.formatDate             = formatDate;
-window.fileIcon               = fileIcon;
-window.getRawFile             = getRawFile;
-window.githubRequest          = githubRequest;
-window.getGHUser              = getGHUser;
-window.getGHRepo              = getGHRepo;
-window.isLoggedIn             = isLoggedIn;
-window.closeAllOverlays       = closeAllOverlays;
-window.showPage               = showPage;
+window.loadPublicDirectory  = loadPublicDirectory;
+window.loadFileViewer       = loadFileViewer;
+window.loadGitHubFilesAdmin = loadGitHubFilesAdmin;
+window.adminEditFile        = adminEditFile;
+window.adminDeleteFile      = adminDeleteFile;
+window.adminCancelEdit      = adminCancelEdit;
+window.adminSaveEdit        = adminSaveEdit;
+window.adminNewFile         = adminNewFile;
+window.adminNewFolder       = adminNewFolder;
+window.showDecryptOverlay   = showDecryptOverlay;
+window.closeDecryptOverlay  = closeDecryptOverlay;
+window.doDecrypt            = doDecrypt;
+window.doLogin              = doLogin;
+window.doLogout             = doLogout;
+window.showToast            = showToast;
+window.renderMarkdown       = renderMarkdown;
+window.startTagline         = startTagline;
+window.formatSize           = formatSize;
+window.formatDate           = formatDate;
+window.fileIcon             = fileIcon;
+window.getRawFile           = getRawFile;
+window.githubRequest        = githubRequest;
+window.getGHUser            = getGHUser;
+window.getGHRepo            = getGHRepo;
+window.isLoggedIn           = isLoggedIn;
+window.closeAllOverlays     = closeAllOverlays;
+window.showPage             = showPage;
+window.getHiddenList        = getHiddenList;
 
 /* ════════════════════════════════════════════════════════════════
-   BOOT
+   BOOT — single DOMContentLoaded, everything in order
 ════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  // ... semua init yang ada ...
 
-  startTagline('agent-tagline');
-
-  // ─── FALLBACK ROUTER ───────────────────────────────────────────
-  // Jika index.html belum dispatch route event, handle hash manual
-  const hash = window.location.hash.slice(1);
-  if (hash === 'login') {
-    showPage('public-page');
-    document.getElementById('login-overlay')?.classList.add('active');
-  } else if (hash === 'about') {
-    showPage('public-page');
-    document.getElementById('about-overlay')?.classList.add('active');
-    startTagline('about-tagline');
-  } else if (hash === 'admin') {
-    isLoggedIn() ? (showPage('admin-page'), loadGitHubFilesAdmin(''))
-                 : (window.location.hash = 'login');
-  } else if (hash.startsWith('file/')) {
-    showPage('viewer-page');
-    loadFileViewer(hash.slice(5));
-  } else if (hash.startsWith('dir/')) {
-    showPage('public-page');
-    loadPublicDirectory(hash.slice(4));
-  } else {
-    // Default: public home
-    showPage('public-page');
-    loadPublicDirectory('');
-  }
-
-  window.addEventListener('hashchange', () => {
-    const h = window.location.hash.slice(1);
-    if (h.startsWith('file/')) { showPage('viewer-page'); loadFileViewer(h.slice(5)); }
-    else if (h.startsWith('dir/')) { showPage('public-page'); loadPublicDirectory(h.slice(4)); }
-    else if (h === 'admin') { isLoggedIn() ? (showPage('admin-page'), loadGitHubFilesAdmin('')) : (window.location.hash = 'login'); }
-    else if (h === 'login') { showPage('public-page'); document.getElementById('login-overlay')?.classList.add('active'); }
-    else { showPage('public-page'); closeAllOverlays(); loadPublicDirectory(''); }
-  });
-});
-
-  // Init Firebase (non-blocking)
+  // 1. Init Firebase (non-blocking)
   initFirebase();
 
-  // Init secure router (listens for custom events from index.html)
+  // 2. Init secure router (listens for custom events from index.html)
   initRouter();
 
-  // Init all UI modules
+  // 3. Init UI modules
   initCrtToggle();
   initSearch();
   initAsciiLogo();
@@ -1142,6 +1110,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initOverlayButtons();
   initViewerButtons();
 
-  // Start tagline on public page footer
+  // 4. Start footer tagline
   startTagline('agent-tagline');
+
+  // 5. Session timer for admin stat bar
+  const _sessionStart = Date.now();
+  setInterval(() => {
+    const elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
+    const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const s = (elapsed % 60).toString().padStart(2, '0');
+    const el = document.getElementById('stat-session');
+    if (el) el.textContent = m + ':' + s;
+  }, 1000);
+
+  // 6. Initial route — run AFTER index.html IIFE has registered routes
+  // Use setTimeout(0) to let the IIFE in index.html complete first
+  setTimeout(handleRoute, 0);
+
 });
