@@ -1085,6 +1085,45 @@ window.showPage               = showPage;
    BOOT
 ════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  // ... semua init yang ada ...
+
+  startTagline('agent-tagline');
+
+  // ─── FALLBACK ROUTER ───────────────────────────────────────────
+  // Jika index.html belum dispatch route event, handle hash manual
+  const hash = window.location.hash.slice(1);
+  if (hash === 'login') {
+    showPage('public-page');
+    document.getElementById('login-overlay')?.classList.add('active');
+  } else if (hash === 'about') {
+    showPage('public-page');
+    document.getElementById('about-overlay')?.classList.add('active');
+    startTagline('about-tagline');
+  } else if (hash === 'admin') {
+    isLoggedIn() ? (showPage('admin-page'), loadGitHubFilesAdmin(''))
+                 : (window.location.hash = 'login');
+  } else if (hash.startsWith('file/')) {
+    showPage('viewer-page');
+    loadFileViewer(hash.slice(5));
+  } else if (hash.startsWith('dir/')) {
+    showPage('public-page');
+    loadPublicDirectory(hash.slice(4));
+  } else {
+    // Default: public home
+    showPage('public-page');
+    loadPublicDirectory('');
+  }
+
+  window.addEventListener('hashchange', () => {
+    const h = window.location.hash.slice(1);
+    if (h.startsWith('file/')) { showPage('viewer-page'); loadFileViewer(h.slice(5)); }
+    else if (h.startsWith('dir/')) { showPage('public-page'); loadPublicDirectory(h.slice(4)); }
+    else if (h === 'admin') { isLoggedIn() ? (showPage('admin-page'), loadGitHubFilesAdmin('')) : (window.location.hash = 'login'); }
+    else if (h === 'login') { showPage('public-page'); document.getElementById('login-overlay')?.classList.add('active'); }
+    else { showPage('public-page'); closeAllOverlays(); loadPublicDirectory(''); }
+  });
+});
+
   // Init Firebase (non-blocking)
   initFirebase();
 
