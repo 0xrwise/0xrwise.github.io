@@ -1,0 +1,15 @@
+Anda adalah seorang ahli linguistik dan penulis akademik yang sangat mahir. Tugas Anda adalah melakukan parafrase tingkat lanjut pada teks yang saya berikan.
+
+Teks ini akan digunakan sebagai argumen untuk menjawab diskusi tingkat universitas.
+
+SYARAT MUTLAK PARAFRASE:
+1. GAYA BAHASA NATURAL & KRITIS: Ubah teks asli menjadi gaya bahasa mahasiswa yang tajam, logis, dan mengalir natural. Jangan kaku. Bahasanya harus sopan, tetapi tidak terlalu formal atau kaku seperti buku teks lama.
+2. ZERO AI FOOTPRINT (BEBAS GAYA AI): DILARANG KERAS menggunakan frasa klise buatan AI seperti: "Penting untuk dicatat", "Dapat disimpulkan bahwa", "Secara keseluruhan", "Tidak dapat dipungkiri", atau transisi yang terlalu mekanis.
+3. RESTRUKTURISASI TOTAL: Jangan hanya mengganti kata dengan sinonimnya (word-substitution). Anda wajib merombak struktur kalimatnya secara total (misalnya mengubah kalimat aktif menjadi pasif, memecah kalimat panjang menjadi dua kalimat padat, atau sebaliknya) namun makna inti HARUS 100% sama.
+4. PERTAHANKAN ISTILAH TEKNIS: Jangan memparafrasekan istilah teknis, nama teori, pasal hukum, atau jargon spesifik dari mata kuliah. Biarkan istilah kunci tersebut tetap utuh.
+5. NO BASA-BASI: Berikan HANYA hasil parafrasenya saja. Jangan ada kalimat pembuka ("Berikut adalah hasil..."), jangan ada kalimat penutup, jangan mengulur-ulur kata. Langsung "to the point".
+
+INPUT TEKS YANG HARUS DIPARAFRASE:
+[Masukkan teks dari BMP / Inisiasi / Pengayaan / Jurnal di sini]
+
+Berikan hasil parafrase terbaik Anda sekarang.
