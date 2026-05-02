@@ -1,0 +1,36 @@
+<nav class="nav-terminal" role="navigation" aria-label="Primary Navigation">
+  <div class="nav-inner">
+
+    <div class="nav-brand">
+      <span class="nav-prompt">root@sigint-station</span>
+      <span class="nav-colon">:</span>
+      <span class="nav-path">~</span>
+      <span class="nav-cursor blink">█</span>
+    </div>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span class="toggle-line"></span>
+      <span class="toggle-line"></span>
+      <span class="toggle-line"></span>
+    </button>
+
+    <ul class="nav-links" id="navLinks" role="list">
+      <li>
+        <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">
+          <span class="link-prefix">//</span> dashboard
+        </a>
+      </li>
+      <li>
+        <a href="{{ '/tools' | relative_url }}" class="nav-link {% if page.url contains 'tools' %}active{% endif %}">
+          <span class="link-prefix">//</span> tools
+        </a>
+      </li>
+    </ul>
+
+    <div class="nav-status">
+      <span class="status-dot pulse"></span>
+      <span class="status-label">UPLINK ACTIVE</span>
+    </div>
+
+  </div>
+</nav>
