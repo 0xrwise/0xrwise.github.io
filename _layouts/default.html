@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="terminal">
+<head>
+  {% include head.html %}
+</head>
+<body class="terminal-body">
+
+  <!-- CRT Scanline Overlay -->
+  <div class="crt-overlay" aria-hidden="true"></div>
+
+  <!-- Noise Grain Texture -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  {% include nav.html %}
+
+  <!-- Main Content -->
+  <main class="main-content" id="main" role="main">
+    {{ content }}
+  </main>
+
+  <!-- Footer -->
+  {% include footer.html %}
+
+  <!-- Core JS -->
+  <script src="{{ '/assets/js/main.js' | relative_url }}" defer></script>
+
+</body>
+</html>
