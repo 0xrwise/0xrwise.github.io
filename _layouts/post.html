@@ -1,0 +1,32 @@
+---
+layout: default
+---
+
+<article class="post-container" role="article">
+
+  <header class="post-header">
+    <div class="post-meta-bar">
+      <span class="meta-tag">FILE</span>
+      <span class="meta-date">{{ page.date | date: "%Y-%m-%d %H:%M" }} UTC</span>
+      <span class="meta-tag">AUTHOR: {{ page.author | default: site.author }}</span>
+      {% if page.tags %}
+        {% for tag in page.tags %}
+          <span class="meta-chip">{{ tag | upcase }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <h1 class="post-title">{{ page.title }}</h1>
+    {% if page.description %}
+      <p class="post-desc">{{ page.description }}</p>
+    {% endif %}
+  </header>
+
+  <div class="post-content">
+    {{ content }}
+  </div>
+
+  <footer class="post-footer">
+    <a href="{{ '/' | relative_url }}" class="btn-terminal">← BACK TO DASHBOARD</a>
+  </footer>
+
+</article>
