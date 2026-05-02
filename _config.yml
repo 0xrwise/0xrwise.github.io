@@ -1,0 +1,52 @@
+# ============================================================
+# 0XRWISE // SIGINT STATION — _config.yml
+# CLASSIFICATION: UNCLASSIFIED // FOR DEPLOYMENT ONLY
+# ============================================================
+
+title: "0xrwise :: SIGINT STATION"
+description: "OSINT | Cybersecurity | Intelligence Research"
+author: "0xrwise"
+handle: "0xrfi"
+baseurl: ""
+url: ""
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+permalink: /:title/
+
+# Sass
+sass:
+  style: compressed
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - .git
+  - node_modules
+
+# Collections
+collections:
+  posts:
+    output: true
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+
+# Custom variables
+agent:
+  codename: "0xrfi"
+  clearance: "TOP SECRET // SCI"
+  station: "JAKARTA FIELD OFFICE"
+  status: "ACTIVE"
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
