@@ -1,0 +1,225 @@
+---
+layout: default
+title: "Dashboard // SIGINT Station"
+description: "Intelligence Operations Dashboard"
+---
+
+<!-- ── ACCESS GRANTED BANNER ──────────────────────────── -->
+<div class="access-banner">
+  <div class="access-tag glow-text">[ ACCESS GRANTED ]</div>
+  <div class="access-sub">AUTHENTICATION SUCCESSFUL — WELCOME BACK, AGENT <span style="color:var(--clr-cyan)">0XRFI</span></div>
+  <div class="access-meta">
+    <span class="meta-item">SESSION: <span id="liveClock">-- -- --</span></span>
+    <span class="meta-item">NODE: <span>JAKARTA-FIELD-01</span></span>
+    <span class="meta-item">PROTOCOL: <span>TOR/ONION-v3</span></span>
+    <span class="meta-item">CLEARANCE: <span>TS/SCI</span></span>
+  </div>
+</div>
+
+<!-- ── MAIN DASHBOARD GRID ───────────────────────────── -->
+<div class="dashboard-grid">
+
+  <!-- ── INTEL LOG (left, wide) ── -->
+  <section class="panel grid-col-8" aria-labelledby="log-title">
+    <div class="panel-header">
+      <span class="panel-icon">▶</span>
+      <span class="panel-title" id="log-title">INTEL ACTIVITY LOG</span>
+      <span style="margin-left:auto;font-size:0.62rem;color:var(--clr-text-muted)">LIVE</span>
+      <span class="status-dot pulse" style="margin-left:6px"></span>
+    </div>
+
+    <div class="intel-log" role="log" aria-live="polite" aria-label="Intelligence activity log">
+
+      <div class="log-entry">
+        <span class="log-time">05:31:02</span>
+        <span class="log-level ok">[  OK  ]</span>
+        <span class="log-msg">Secure uplink established — TOR circuit rebuilt</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:04</span>
+        <span class="log-level info">[ INFO ]</span>
+        <span class="log-msg">OSINT sweep initiated on target domain — passive mode</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:09</span>
+        <span class="log-level ok">[  OK  ]</span>
+        <span class="log-msg">Subdomain enumeration complete — 14 records indexed</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:15</span>
+        <span class="log-level warn">[ WARN ]</span>
+        <span class="log-msg">Anomalous packet burst detected — source: 45.33.32.156</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:22</span>
+        <span class="log-level info">[ INFO ]</span>
+        <span class="log-msg">XAUUSD Elliott Wave pattern confirmed — Wave 3 impulse</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:30</span>
+        <span class="log-level ok">[  OK  ]</span>
+        <span class="log-msg">Kernel module loaded — NetHunter interface activated</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:44</span>
+        <span class="log-level info">[ INFO ]</span>
+        <span class="log-msg">IRC relay synced — Fsociety Hidden Net // .onion OK</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:31:51</span>
+        <span class="log-level warn">[ WARN ]</span>
+        <span class="log-msg">Port scan detected on :8080 — firewall rule applied</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:32:03</span>
+        <span class="log-level ok">[  OK  ]</span>
+        <span class="log-msg">Ollama LLM instance healthy — model: deepseek-coder</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:32:11</span>
+        <span class="log-level crit">[ CRIT ]</span>
+        <span class="log-msg">Unauthorized access attempt blocked — IP blacklisted</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:32:18</span>
+        <span class="log-level info">[ INFO ]</span>
+        <span class="log-msg">Report compiled — SIGINT-20260502-ALPHA delivered</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time">05:32:25</span>
+        <span class="log-level ok">[  OK  ]</span>
+        <span class="log-msg">Station integrity check passed — all systems nominal</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── AGENT PROFILE (right, narrow) ── -->
+  <section class="panel grid-col-4" aria-labelledby="agent-title">
+    <div class="panel-header">
+      <span class="panel-icon">◉</span>
+      <span class="panel-title" id="agent-title">AGENT DOSSIER</span>
+    </div>
+
+    <div class="agent-profile">
+      <div class="profile-avatar" aria-hidden="true">🕵</div>
+
+      <div class="profile-row">
+        <span class="profile-key">HANDLE</span>
+        <span class="profile-val">0xrfi</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">CODENAME</span>
+        <span class="profile-val cyan">RWISE</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">ROLE</span>
+        <span class="profile-val">OSINT / CYB.SEC</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">STATION</span>
+        <span class="profile-val">JAKARTA-01</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">STATUS</span>
+        <span class="profile-val" style="color:var(--clr-phosphor)">● ACTIVE</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">CLEARANCE</span>
+        <span class="profile-val amber">TS / SCI</span>
+      </div>
+      <div class="profile-row">
+        <span class="profile-key">CERT</span>
+        <span class="profile-val cyan">GADA PRATAMA</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STAT CARDS ── -->
+  <section class="panel grid-col-8" aria-labelledby="stats-title">
+    <div class="panel-header">
+      <span class="panel-icon">▣</span>
+      <span class="panel-title" id="stats-title">OPERATION METRICS</span>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-label">DOMAINS SCANNED</span>
+        <span class="stat-value" data-count="1482">0</span>
+        <span class="stat-unit">TOTAL PASSIVE OSINT</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">THREATS BLOCKED</span>
+        <span class="stat-value" data-count="37">0</span>
+        <span class="stat-unit">THIS WEEK</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">XAU/USD SIGNAL ACC.</span>
+        <span class="stat-value" data-count="78.4">0</span>
+        <span class="stat-unit">% // ELLIOTT WAVE EW3</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">TOOLS DEPLOYED</span>
+        <span class="stat-value" data-count="0">0</span>
+        <span class="stat-unit" style="color:var(--clr-amber)">AWAITING BUILD</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ACTIVE MISSIONS ── -->
+  <section class="panel grid-col-4" aria-labelledby="missions-title">
+    <div class="panel-header">
+      <span class="panel-icon">◈</span>
+      <span class="panel-title" id="missions-title">ACTIVE OPS</span>
+    </div>
+
+    <div class="mission-list">
+      <div class="mission-item">
+        <span class="mission-badge badge-active">ACTIVE</span>
+        <span class="mission-name">PROJECT: SIGINT STATION</span>
+      </div>
+      <div class="mission-item">
+        <span class="mission-badge badge-active">ACTIVE</span>
+        <span class="mission-name">OP: FSOCIETY IRC NET</span>
+      </div>
+      <div class="mission-item">
+        <span class="mission-badge badge-pending">PENDING</span>
+        <span class="mission-name">BUILD: TOOLS ARSENAL</span>
+      </div>
+      <div class="mission-item">
+        <span class="mission-badge badge-active">ACTIVE</span>
+        <span class="mission-name">INTEL: XAUUSD WATCH</span>
+      </div>
+      <div class="mission-item">
+        <span class="mission-badge badge-closed">CLOSED</span>
+        <span class="mission-name">OP: NETHUNTER DEPLOY</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TERMINAL BLOCK ── -->
+  <section class="panel grid-col-12" aria-labelledby="term-title">
+    <div class="panel-header">
+      <span class="panel-icon">$</span>
+      <span class="panel-title" id="term-title">LAST KNOWN COMMANDS</span>
+    </div>
+
+    <div class="terminal-block" role="region" aria-label="Terminal output">
+      <span class="t-line"><span class="t-prompt">root@sigint-station:~# </span><span class="t-cmd">nmap -sV --script vuln 45.33.32.156</span></span>
+      <span class="t-line t-out">Starting Nmap 7.94 — [host discovery, version scan]</span>
+      <span class="t-line t-ok">PORT     STATE  SERVICE  VERSION</span>
+      <span class="t-line t-out">22/tcp   open   ssh      OpenSSH 8.9p1</span>
+      <span class="t-line t-out">80/tcp   open   http     nginx 1.24.0</span>
+      <span class="t-line t-warn">443/tcp  open   ssl/http nginx [CVE-2023-44487 detected]</span>
+      <span class="t-line t-out">&nbsp;</span>
+      <span class="t-line"><span class="t-prompt">root@sigint-station:~# </span><span class="t-cmd">./subdomain-finder.sh --domain target.id --wordlist custom.txt</span></span>
+      <span class="t-line t-ok">[+] Found: admin.target.id → 203.x.x.1</span>
+      <span class="t-line t-ok">[+] Found: vpn.target.id   → 203.x.x.8</span>
+      <span class="t-line t-ok">[+] Found: mail.target.id  → 203.x.x.12</span>
+      <span class="t-line t-out">[*] Enumeration complete — 14 records found.</span>
+      <span class="t-line t-out">&nbsp;</span>
+      <span class="t-line"><span class="t-prompt">root@sigint-station:~# </span><span class="t-cursor blink">█</span></span>
+    </div>
+  </section>
+
+</div>
