@@ -47,6 +47,11 @@ agent:
   station: "JAKARTA FIELD OFFICE"
   status: "ACTIVE"
 
+# Plugins — MUST match Gemfile :jekyll_plugins group
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
 kramdown:
   input: GFM
   syntax_highlighter: rouge
