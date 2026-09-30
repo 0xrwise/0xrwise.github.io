@@ -1,0 +1,192 @@
+---
+---
+:root {
+    /* Palet Warna Persis Referensi (GitHub Dark Style) */
+    --bg-body: #0d1117;       /* Latar belakang luar (Hitam gelap) */
+    --bg-terminal: #0d1117;   /* Latar dalam terminal */
+    --bg-header: #161b22;     /* Latar belakang tab menu sedikit lebih terang */
+    
+    --text-white: #c9d1d9;    /* Putih kalem (Soft White) - Tidak bikin mata pegal */
+    --text-green: #3fb950;    /* Hijau nyala persis di gambar */
+    --text-red: #ff7b72;      /* Merah kalem untuk teks */
+    --text-blue: #58a6ff;     /* Biru untuk link */
+    --text-muted: #8b949e;    /* Abu-abu untuk batas garis */
+    
+    /* Warna tombol Mac */
+    --mac-red: #f85149;
+    --mac-yellow: #d29922;
+    --mac-green: #2ea043;
+    
+    --font-mono: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', Courier, monospace;
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body, html {
+    background-color: var(--bg-body);
+    color: var(--text-white);
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 2vw, 16px); 
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.6;
+}
+
+/* Utilities Class Warna */
+.c-white { color: var(--text-white); }
+.c-green { color: var(--text-green); font-weight: bold; }
+.c-red { color: var(--text-red); font-weight: bold; }
+.c-blue { color: var(--text-blue); font-weight: bold; }
+
+/* Kontainer Utama Terminal */
+.terminal-container {
+    max-width: 900px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-terminal);
+    border-left: 1px solid var(--bg-header);
+    border-right: 1px solid var(--bg-header);
+}
+
+/* --- HEADER GAYA MACOS & TAB --- */
+.terminal-header {
+    background-color: var(--bg-header);
+    border-bottom: 1px solid var(--text-muted);
+}
+
+.top-bar {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    position: relative;
+}
+
+.mac-controls {
+    display: flex;
+    gap: 8px;
+    
+    .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .red { background-color: var(--mac-red); }
+    .yellow { background-color: var(--mac-yellow); }
+    .green { background-color: var(--mac-green); }
+}
+
+.top-bar .title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* Menu Navigasi Model Tab */
+.tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none; /* Sembunyikan scrollbar di tab */
+    
+    a {
+        padding: 10px 20px;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 14px;
+        border-right: 1px solid #21262d;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        
+        &:hover {
+            color: var(--text-white);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Tab Aktif dapat garis bawah hijau */
+        &.active {
+            color: var(--text-white);
+            border-bottom: 2px solid var(--text-green);
+            background-color: var(--bg-terminal); /* Menyatu dengan background bawah */
+        }
+    }
+}
+
+/* --- KONTEN TERMINAL --- */
+.terminal-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 30px 20px; /* Jarak lega di dalam terminal */
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-muted) transparent;
+}
+
+.ascii-art {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 25px;
+    
+    pre {
+        font-size: clamp(6px, 1.5vw, 14px); 
+        line-height: 1.15;
+        font-weight: 700;
+        color: var(--text-green);
+    }
+}
+
+.intro-text { 
+    margin-bottom: 30px; 
+}
+
+/* Input Command (Anti Jatuh) */
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    width: 100%;
+    
+    .prompt { 
+        margin-right: 10px; 
+        white-space: nowrap; 
+    }
+    
+    input {
+        flex-grow: 1;
+        width: 100%;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-white);
+        font-family: var(--font-mono);
+        font-size: inherit;
+        outline: none;
+        caret-color: var(--text-white); /* Kursor putih */
+    }
+}
+
+.output-line { 
+    margin: 8px 0; 
+    word-break: break-word; 
+}
+
+/* MEDIA QUERIES (Desktop) */
+@media screen and (min-width: 768px) {
+    .terminal-content {
+        padding: 40px 30px; 
+    }
+    
+    .tabs a {
+        padding: 12px 25px; /* Tab lebih besar di PC */
+        font-size: 15px;
+    }
+}
