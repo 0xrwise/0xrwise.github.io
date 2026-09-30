@@ -1,0 +1,71 @@
+---
+layout: default
+permalink: /posts/
+title: Posts - 0xrwise
+---
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.tabs a').forEach(link => link.classList.remove('active'));
+        document.querySelector('.tabs a[href="/posts"]').classList.add('active');
+    });
+</script>
+
+<div class="terminal-content-text">
+    <!-- Perintah diganti jadi 'ls' biar lebih masuk akal karena cuma nampilin nama file -->
+    <div class="output-line" style="margin-bottom: 20px;">
+        <span class="prompt"><span class="c-red">0xrwise</span><span class="c-white">@research:~$</span></span> <span class="c-white">cd ~/posts && ls</span>
+    </div>
+    
+    <!-- Output daftar artikel yang Clean & Minimalist -->
+    <div class="output-line" style="line-height: 2; font-size: 15px;">
+        {% if site.posts.size > 0 %}
+            {% for post in site.posts %}
+            <!-- Tanggal warna hijau, Judul asli artikel bisa diklik -->
+            <span class="c-green">[{{ post.date | date: "%Y-%m-%d" }}]</span> &nbsp;&nbsp; <a href="{{ post.url }}" class="post-link">{{ post.title }}</a><br>
+            {% endfor %}
+        {% else %}
+            <!-- File dummy (Tampil kalau belum ada post Jekyll asli) -->
+            <span class="c-green">[2026-09-28]</span> &nbsp;&nbsp; <a href="#" class="post-link">The Illusion of Control</a><br>
+            <span class="c-green">[2026-09-25]</span> &nbsp;&nbsp; <a href="#" class="post-link">Analyzing the Ouroboros</a><br>
+            <span class="c-green">[2026-09-15]</span> &nbsp;&nbsp; <a href="#" class="post-link">Exploiting Human Nature</a><br>
+        {% endif %}
+    </div>
+    
+    <br>
+    
+    <div class="output-line" style="margin-top: 10px;">
+        <span class="prompt"><span class="c-red">0xrwise</span><span class="c-white">@research:~/posts$</span></span> <span class="blinking-cursor"></span>
+    </div>
+</div>
+
+<style>
+    /* Styling link artikel saat disentuh/di-hover */
+    .post-link {
+        color: var(--text-white);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        padding: 2px 6px;
+        margin-left: -6px;
+        border-radius: 3px;
+    }
+    .post-link:hover {
+        background-color: var(--text-green);
+        color: var(--bg-body); /* Teks jadi gelap saat hover */
+        font-weight: bold;
+    }
+    
+    .blinking-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 16px;
+        background-color: var(--text-white);
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+        margin-left: 5px;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+</style>

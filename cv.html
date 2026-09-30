@@ -1,0 +1,70 @@
+---
+layout: default
+permalink: /cv/
+title: CV - 0xrwise
+---
+
+<!-- Script ini buat otomatis mindahin garis bawah hijau (class active) ke menu CV -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.tabs a').forEach(link => link.classList.remove('active'));
+        document.querySelector('.tabs a[href="/cv"]').classList.add('active');
+    });
+</script>
+
+<div class="terminal-content-text">
+    <!-- Baris perintah (Command Line) -->
+    <div class="output-line" style="margin-bottom: 20px;">
+        <span class="prompt"><span class="c-red">0xrwise</span><span class="c-white">@research:~$</span></span> <span class="c-white">cat curriculum_vitae.json</span>
+    </div>
+    
+    <!-- Output JSON CV -->
+    <div class="output-line" style="line-height: 1.8;">
+        <span class="c-green">{</span><br>
+        &nbsp;&nbsp;<span class="c-red">"name"</span>: <span class="c-white">"M. Rafi Akbar"</span>,<br>
+        &nbsp;&nbsp;<span class="c-red">"alias"</span>: <span class="c-white">"0xrwise"</span>,<br>
+        &nbsp;&nbsp;<span class="c-red">"role"</span>: <span class="c-white">"Researcher"</span>,<br>
+        <br>
+        &nbsp;&nbsp;<span class="c-red">"summary"</span>: <span class="c-white">"An independent researcher, I obsess over dissecting complex systems whether it’s technology, law, politics, or the chaotic nature of existence itself."</span>,<br>
+        <br>
+        &nbsp;&nbsp;<span class="c-red">"experience"</span>: <span class="c-green">[</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-green">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"title"</span>: <span class="c-white">"Researcher"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"focus"</span>: <span class="c-white">"Tell the truth"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"status"</span>: <span class="c-white">"Ongoing"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-green">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-green">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"title"</span>: <span class="c-white">"Observer"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"focus"</span>: <span class="c-white">"Tech, Law, Politics, Existence"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-blue">"status"</span>: <span class="c-white">"Active"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-green">}</span><br>
+        &nbsp;&nbsp;<span class="c-green">]</span>,<br>
+        <br>
+        &nbsp;&nbsp;<span class="c-red">"contact"</span>: <span class="c-white">"</span><a href="https://t.me/0xrwise" target="_blank" class="c-blue" style="text-decoration: none; border-bottom: 1px dashed var(--text-blue);">t.me/0xrwise</a><span class="c-white">"</span><br>
+        <span class="c-green">}</span>
+    </div>
+    
+    <br>
+    
+    <!-- Kursor kedap-kedip biar kelihatan real terminal -->
+    <div class="output-line" style="margin-top: 10px;">
+        <span class="prompt"><span class="c-red">0xrwise</span><span class="c-white">@research:~$</span></span> <span class="blinking-cursor"></span>
+    </div>
+</div>
+
+<style>
+    /* Animasi kursor terminal */
+    .blinking-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 16px;
+        background-color: var(--text-white);
+        animation: blink 1s step-end infinite;
+        vertical-align: middle;
+        margin-left: 5px;
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+</style>

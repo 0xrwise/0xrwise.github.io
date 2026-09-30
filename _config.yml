@@ -1,0 +1,22 @@
+# Pengaturan Dasar Website
+title: 0xrwise | Independent Researcher
+email: 0xrwise@proton.me
+description: >-
+  archive for research.
+baseurl: "" # biarkan kosong kalau jalan di root (localhost:4000)
+url: "https://0xrwise.my.id"
+
+# Pengaturan Build
+markdown: kramdown
+# theme: minima # Kita gak pakai tema bawaan sebetulnya, tapi biarin aja biar Jekyll gak error
+permalink: /:categories/:year/:month/:day/:title/
+
+# File/Folder yang gak perlu di-build sama Jekyll
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
