@@ -30,6 +30,7 @@ body, html {
     background-color: var(--bg-body);
     color: var(--text-white);
     font-family: var(--font-mono);
+    /* Ukuran font dasar sedikit diperbesar untuk kenyamanan */
     font-size: clamp(14px, 2vw, 16px); 
     height: 100vh;
     overflow: hidden;
@@ -42,9 +43,11 @@ body, html {
 .c-red { color: var(--text-red); font-weight: bold; }
 .c-blue { color: var(--text-blue); font-weight: bold; }
 
-/* Kontainer Utama Terminal */
+/* Kontainer Utama Terminal - KUNCI PERUBAHAN ADA DI SINI */
 .terminal-container {
-    max-width: 900px;
+    /* Kita gunakan persentase lebar layar dengan batas maksimal yang lebih besar */
+    width: 100%;
+    max-width: 1200px; /* Diperlebar dari 900px menjadi 1200px agar lebih proporsional di Desktop */
     margin: 0 auto;
     height: 100%;
     display: flex;
@@ -52,6 +55,9 @@ body, html {
     background-color: var(--bg-terminal);
     border-left: 1px solid var(--bg-header);
     border-right: 1px solid var(--bg-header);
+    
+    /* Tambahan efek bayangan tipis agar terminal terlihat melayang dari background body (opsional) */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
 }
 
 /* --- HEADER GAYA MACOS & TAB --- */
@@ -95,7 +101,7 @@ body, html {
 .tabs {
     display: flex;
     overflow-x: auto;
-    scrollbar-width: none; /* Sembunyikan scrollbar di tab */
+    scrollbar-width: none; 
     
     a {
         padding: 10px 20px;
@@ -112,11 +118,10 @@ body, html {
             background-color: rgba(255, 255, 255, 0.05);
         }
         
-        /* Tab Aktif dapat garis bawah hijau */
         &.active {
             color: var(--text-white);
             border-bottom: 2px solid var(--text-green);
-            background-color: var(--bg-terminal); /* Menyatu dengan background bawah */
+            background-color: var(--bg-terminal); 
         }
     }
 }
@@ -126,9 +131,21 @@ body, html {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 30px 20px; /* Jarak lega di dalam terminal */
+    padding: 30px 20px; 
     scrollbar-width: thin;
     scrollbar-color: var(--text-muted) transparent;
+}
+
+/* Custom Scrollbar untuk Browser Berbasis Webkit (Chrome, Edge, Safari) */
+.terminal-content::-webkit-scrollbar {
+    width: 8px;
+}
+.terminal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+.terminal-content::-webkit-scrollbar-thumb {
+    background-color: var(--text-muted);
+    border-radius: 4px;
 }
 
 .ascii-art {
@@ -148,7 +165,7 @@ body, html {
     margin-bottom: 30px; 
 }
 
-/* Input Command (Anti Jatuh) */
+/* Input Command */
 .terminal-input-line {
     display: flex;
     align-items: center;
@@ -170,7 +187,7 @@ body, html {
         font-family: var(--font-mono);
         font-size: inherit;
         outline: none;
-        caret-color: var(--text-white); /* Kursor putih */
+        caret-color: var(--text-white); 
     }
 }
 
@@ -179,14 +196,42 @@ body, html {
     word-break: break-word; 
 }
 
-/* MEDIA QUERIES (Desktop) */
+/* --- MEDIA QUERIES UNTUK RESPONSIVITAS --- */
+
+/* Tablet (Layar Sedang) */
 @media screen and (min-width: 768px) {
     .terminal-content {
         padding: 40px 30px; 
     }
     
     .tabs a {
-        padding: 12px 25px; /* Tab lebih besar di PC */
+        padding: 12px 25px; 
         font-size: 15px;
+    }
+}
+
+/* Desktop (Layar Lebar) */
+@media screen and (min-width: 1024px) {
+    .terminal-container {
+        /* Di layar lebar, berikan margin atas dan bawah agar terminal tidak menempel di tepi atas/bawah browser */
+        margin: 20px auto; 
+        height: calc(100vh - 40px); /* Kurangi tinggi dengan margin agar tetap terlihat melayang */
+        border-radius: 8px; /* Tambahkan sedikit lengkungan pada sudut terminal di desktop */
+        border: 1px solid var(--text-muted); /* Perjelas batas terminal */
+    }
+    
+    /* Sesuaikan lengkungan header terminal agar mengikuti kontainer utama */
+    .terminal-header {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .terminal-content {
+        padding: 50px 40px; /* Padding lebih lega di desktop */
+        font-size: 16px; /* Font size yang mantap untuk desktop */
+    }
+    
+    .ascii-art pre {
+         font-size: 14px; /* Fix ukuran ASCII art di desktop agar tidak terlalu kecil */
     }
 }
