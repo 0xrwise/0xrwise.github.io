@@ -1,17 +1,21 @@
 # Pengaturan Dasar Website
 title: 0xrwise | Independent Researcher
-email: 0xrwise@proton.me
+email: 0xrwise@atomicmail.io
 description: >-
-  archive for research.
-baseurl: "" # biarkan kosong kalau jalan di root (localhost:4000)
+  Archive for research. Life for research and spreading the truth.
+baseurl: "" 
 url: "https://0xrwise.my.id"
+
+# --- TAMBAHAN UNTUK META PREVIEW ---
+# Gambar default saat share link (pastikan gambar ada di folder assets/images/)
+image: "/assets/images/default-preview.jpg"
+# Username X/Twitter (opsional)
+twitter_username: 0xrwise 
 
 # Pengaturan Build
 markdown: kramdown
-# theme: minima # Kita gak pakai tema bawaan sebetulnya, tapi biarin aja biar Jekyll gak error
 permalink: /:categories/:year/:month/:day/:title/
 
-# File/Folder yang gak perlu di-build sama Jekyll
 exclude:
   - Gemfile
   - Gemfile.lock
