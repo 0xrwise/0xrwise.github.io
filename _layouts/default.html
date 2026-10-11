@@ -4,37 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Dinamis Title -->
+    <!-- Dinamis Title & Deskripsi -->
     <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
     <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
 
     <!-- === OPEN GRAPH META TAGS (Untuk WA, FB, Telegram, dll) === -->
+    {% assign og_image = page.image | default: site.image %}
     <meta property="og:site_name" content="{{ site.title }}">
     <meta property="og:type" content="{% if page.url contains '/posts/' %}article{% else %}website{% endif %}">
     <meta property="og:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
     <meta property="og:description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
     <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+    <!-- Fix URL Absolut untuk Gambar -->
+    <meta property="og:image" content="{{ site.url | append: og_image }}">
     
-    <!-- Logika Gambar: Ambil gambar dari post (jika ada), jika tidak ambil default -->
-    {% if page.image %}
-        <meta property="og:image" content="{{ site.url }}{{ page.image }}">
-    {% else %}
-        <meta property="og:image" content="{{ site.url }}{{ site.image }}">
-    {% endif %}
-
     <!-- === TWITTER CARDS (Untuk preview di X/Twitter) === -->
-    <!-- Pakai summary_large_image agar gambar tampil besar seperti di screenshot -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@{{ site.twitter_username }}">
     <meta name="twitter:creator" content="@{{ site.twitter_username }}">
     <meta name="twitter:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
     <meta name="twitter:description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
-    {% if page.image %}
-        <meta name="twitter:image" content="{{ site.url }}{{ page.image }}">
-    {% else %}
-        <meta name="twitter:image" content="{{ site.url }}{{ site.image }}">
-    {% endif %}
+    <!-- Fix URL Absolut untuk Gambar Twitter -->
+    <meta name="twitter:image" content="{{ site.url | append: og_image }}">
 
+    <!-- FontAwesome & Custom CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
@@ -55,6 +48,7 @@
                 <a href="/posts"><i class="fa-solid fa-folder-open"></i> POST</a>
                 <a href="/cv"><i class="fa-solid fa-user-tie"></i> CV</a>
                 
+                <!-- Logika Liquid Jekyll: Tombol Search HANYA muncul di halaman POSTS -->
                 {% if page.url == '/posts/' %}
                 <a href="#" style="margin-left: auto; border-right: none;" title="Search">
                     <i class="fa-solid fa-magnifying-glass"></i>
