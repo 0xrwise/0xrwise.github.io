@@ -27,7 +27,7 @@ terminal:
   hostname: "0x4research"              # [UBAH] Nama host pada prompt
   intro_title: "Welcome to 0x4research interactive shell."
   # [UBAH] Banner ASCII Art pada halaman utama (Home)
-  ascii_banner: |
+  ascii_banner: |2
       ___        _  _                                    _     
      / _ \__  __| || |  _ __ ___  ___  ___  __ _ _ __ ___| |__  
     | | | \ \/ /| || |_| '__/ _ \/ __|/ _ \/ _` | '__/ __| '_ \ 
