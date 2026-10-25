@@ -1,72 +1,276 @@
-document.addEventListener("DOMContentLoaded", function() {
+/**
+ * 0x4research — Interactive Terminal & Typewriter Controller
+ * Handles:
+ *   1. Interactive shell prompt on the Home page (index.html)
+ *   2. Automatic typewriter sequence on the CV page (cv.html)
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    initInteractiveShell();
+    initCvTypewriter();
+});
+
+function escapeHtml(unsafe) {
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/**
+ * 1. HOME PAGE INTERACTIVE SHELL
+ */
+function initInteractiveShell() {
     const inputField = document.getElementById("cmd-input");
     const outputArea = document.getElementById("terminal-output");
     const scrollArea = document.getElementById("terminal-scroll");
-    
-    // Pastikan variabel ini persis dengan format di index.html
-    const promptHTML = `<span class="c-red">0xrwise</span><span class="c-white">@research:~$</span>`;
+    const configNode = document.getElementById("terminal-config");
 
-    // Memaksa fokus ke input saat layar diklik (kecuali saat blok teks)
+    if (!inputField || !outputArea) {
+        return;
+    }
+
+    let config = {
+        username: "user",
+        hostname: "0x4research",
+        commands: {
+            whoami: {
+                name: "[YOUR_FULL_NAME]",
+                alias: "[YOUR_USERNAME]",
+                bio: "Configure your bio in _config.yml",
+                focus: "Research | Writing | Technology"
+            },
+            skills: "Configure your skills in _config.yml",
+            contact: {
+                label: "Contact",
+                text: "github.com/yourusername",
+                url: "https://github.com/yourusername"
+            }
+        }
+    };
+
+    if (configNode) {
+        try {
+            config = Object.assign(config, JSON.parse(configNode.textContent));
+        } catch (err) {
+            console.error("Failed to parse terminal configuration:", err);
+        }
+    }
+
+    const promptHTML = `<span class="c-red">${escapeHtml(config.username)}</span><span class="c-white">@${escapeHtml(config.hostname)}:~$</span>`;
+
+    const commandRegistry = {
+        help: () => `
+            <span class="c-white">Available commands:</span><br>
+            <span class="c-green">whoami</span>   <span class="c-white">- About the author</span><br>
+            <span class="c-green">skills</span>   <span class="c-white">- View research focus &amp; skills</span><br>
+            <span class="c-green">contact</span>  <span class="c-white">- Get contact info</span><br>
+            <span class="c-green">clear</span>    <span class="c-white">- Clear terminal screen</span>
+        `,
+        whoami: () => {
+            const w = config.commands.whoami || {};
+            return `
+                <span class="c-green">Name</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="c-white">${escapeHtml(w.name)}</span><br>
+                <span class="c-green">Username</span> : <span class="c-red">${escapeHtml(w.alias)}</span><br>
+                <br>
+                <span class="c-white">${escapeHtml(w.bio)}</span><br>
+                <br>
+                <span class="c-blue">${escapeHtml(w.focus)}</span>
+            `;
+        },
+        skills: () => `<span class="c-white">${escapeHtml(config.commands.skills)}</span>`,
+        contact: () => {
+            const c = config.commands.contact || {};
+            const safeUrl = escapeHtml(c.url || "#");
+            const safeLabel = escapeHtml(c.label || "Contact");
+            const safeText = escapeHtml(c.text || safeUrl);
+            return `<span class="c-blue">${safeLabel}:</span> <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="comm-link">${safeText}</a>`;
+        }
+    };
+
+    const commandHistory = [];
+    let historyIndex = -1;
+
     document.body.addEventListener("click", () => {
         if (window.getSelection().toString() === "") {
             inputField.focus();
         }
     });
 
-    // Database Command
-    const commands = {
-        "help": `
-            <span class="c-white">Available commands:</span><br>
-            <span class="c-green">whoami</span>   <span class="c-white">- About the author</span><br>
-            <span class="c-green">skills</span>   <span class="c-white">- View technical skills</span><br>
-            <span class="c-green">contact</span>  <span class="c-white">- Get contact info</span><br>
-            <span class="c-green">clear</span>    <span class="c-white">- Clear terminal screen</span>
-        `,
-        "whoami": `
-            <span class="c-green">Name</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span class="c-white">M. Rafi Akbar</span><br>
-            <span class="c-green">Identity</span> : <span class="c-red">0xrwise</span><br>
-            <br>
-            <span class="c-white">Sensitive young man that trying to life for research and spreading the truth.</span><br>
-            <br>
-            <span class="c-blue">⚖️ Tech | Law | Politics | Existence.</span>
-        `,
-        "skills": "<span class='c-white'>idk man, i just observe what everyone else ignores, pull a few strings, and </span><span class='c-red'>make chaos work for me</span><span class='c-white'>. it's all just a mental game, isn't it?</span>",
-
-	"contact": "<span class='c-blue'>Telegram:</span> <a href='https://t.me/0xrwise' target='_blank' class='c-white' style='text-decoration: none; border-bottom: 1px dashed var(--text-white);'>t.me/0xrwise</a>",
-
+    const printOutput = (htmlContent) => {
+        const line = document.createElement("div");
+        line.className = "output-line";
+        line.innerHTML = htmlContent;
+        outputArea.appendChild(line);
     };
 
-    inputField.addEventListener("keydown", function(e) {
-        if (e.key === "Enter") {
-            const cmd = inputField.value.trim().toLowerCase();
-            const rawCmd = inputField.value.trim();
-            inputField.value = ""; 
+    const scrollToBottom = () => {
+        if (!scrollArea) return;
+        requestAnimationFrame(() => {
+            scrollArea.scrollTop = scrollArea.scrollHeight;
+        });
+    };
 
-            if (cmd === "") return;
+    inputField.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp") {
+            event.preventDefault();
+            if (commandHistory.length > 0 && historyIndex > 0) {
+                historyIndex--;
+                inputField.value = commandHistory[historyIndex];
+            }
+            return;
+        }
 
-            // Cetak riwayat input persis seperti yang diketik user
-            printOutput(`<span class="prompt">${promptHTML}</span> <span class="c-white">${rawCmd}</span>`);
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            if (historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                inputField.value = commandHistory[historyIndex];
+            } else {
+                historyIndex = commandHistory.length;
+                inputField.value = "";
+            }
+            return;
+        }
 
-            // Logika Command
+        if (event.key === "Enter") {
+            const rawInput = inputField.value.trim();
+            const cmd = rawInput.toLowerCase();
+            inputField.value = "";
+
+            if (!rawInput) return;
+
+            commandHistory.push(rawInput);
+            historyIndex = commandHistory.length;
+
+            printOutput(`<span class="prompt">${promptHTML}</span> <span class="c-white">${escapeHtml(rawInput)}</span>`);
+
             if (cmd === "clear") {
                 outputArea.innerHTML = "";
-            } else if (commands[cmd]) {
-                printOutput(commands[cmd]);
+            } else if (Object.prototype.hasOwnProperty.call(commandRegistry, cmd)) {
+                printOutput(commandRegistry[cmd]());
             } else {
-                printOutput(`<span class="c-red">bash: ${cmd}: command not found.</span> <span class="c-white">Type</span> <span class="c-green">'help'</span> <span class="c-white">for available commands.</span>`);
+                printOutput(
+                    `<span class="c-red">bash: ${escapeHtml(cmd)}: command not found.</span> ` +
+                    `<span class="c-white">Type</span> <span class="c-green">'help'</span> <span class="c-white">for available commands.</span>`
+                );
             }
-            
-            // Auto-scroll ke bawah saat ada teks baru
-            setTimeout(() => {
-                scrollArea.scrollTop = scrollArea.scrollHeight;
-            }, 10);
+
+            scrollToBottom();
         }
     });
+}
 
-    function printOutput(html) {
-        const div = document.createElement("div");
-        div.className = "output-line";
-        div.innerHTML = html;
-        outputArea.appendChild(div);
+/**
+ * 2. CV PAGE TYPEWRITER SEQUENCE (RATAALADA-STYLE)
+ */
+function initCvTypewriter() {
+    const cvRoot = document.getElementById("cv-root");
+    if (!cvRoot) return;
+
+    const cmdTarget = document.getElementById("cv-typed-cmd");
+    const cmdCursor = document.getElementById("cv-cmd-cursor");
+    const bodyContent = document.getElementById("cv-body-content");
+    const bioOutput = document.getElementById("cv-typewriter-output");
+    const bioCursor = document.getElementById("cv-bio-cursor");
+    const bioDataNode = document.getElementById("cv-bio-data");
+    const fadeSections = cvRoot.querySelectorAll(".cv-fade-section");
+
+    const commandStr = cvRoot.getAttribute("data-cmd") || "cat ~/cv.txt";
+    const baseSpeed = Math.max(5, parseInt(cvRoot.getAttribute("data-speed") || "18", 10));
+
+    let bioLines = [];
+    if (bioDataNode) {
+        try {
+            const parsed = JSON.parse(bioDataNode.textContent);
+            if (Array.isArray(parsed)) {
+                bioLines = parsed;
+            }
+        } catch (err) {
+            console.error("Failed to parse CV bio lines:", err);
+        }
     }
-});
+
+    let skipAnimation = false;
+
+    const revealRemainingSections = () => {
+        if (bioCursor) {
+            bioCursor.style.display = "none";
+        }
+        fadeSections.forEach((sec, idx) => {
+            setTimeout(() => {
+                sec.classList.add("is-visible");
+            }, skipAnimation ? 0 : idx * 120);
+        });
+    };
+
+    // Allow user to click anywhere in the CV to complete typing immediately
+    cvRoot.addEventListener("click", () => {
+        skipAnimation = true;
+    });
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function runSequence() {
+        await sleep(250);
+
+        // Step 1: Type the shell command (e.g., "cat ~/cv.txt")
+        for (let i = 0; i < commandStr.length; i++) {
+            if (skipAnimation) {
+                cmdTarget.textContent = commandStr;
+                break;
+            }
+            cmdTarget.textContent += commandStr[i];
+            await sleep(35);
+        }
+
+        await sleep(skipAnimation ? 0 : 220);
+
+        if (cmdCursor) {
+            cmdCursor.style.display = "none";
+        }
+        if (bodyContent) {
+            bodyContent.classList.remove("is-hidden");
+        }
+
+        // Step 2: Type each paragraph in the bio box character-by-character
+        for (let pIndex = 0; pIndex < bioLines.length; pIndex++) {
+            const lineText = String(bioLines[pIndex]);
+            const pElem = document.createElement("p");
+            pElem.className = "cv-bio-paragraph";
+
+            const prefix = document.createElement("span");
+            prefix.className = "c-green";
+            prefix.textContent = "> ";
+            pElem.appendChild(prefix);
+
+            const textSpan = document.createElement("span");
+            pElem.appendChild(textSpan);
+            bioOutput.appendChild(pElem);
+
+            // Keep cursor right after the active text
+            if (bioCursor) {
+                pElem.appendChild(bioCursor);
+            }
+
+            for (let cIndex = 0; cIndex < lineText.length; cIndex++) {
+                if (skipAnimation) {
+                    textSpan.textContent = lineText;
+                    break;
+                }
+                textSpan.textContent += lineText[cIndex];
+                const char = lineText[cIndex];
+                const delay = (char === "." || char === ",") ? baseSpeed * 4 : baseSpeed;
+                await sleep(delay);
+            }
+
+            await sleep(skipAnimation ? 0 : 250);
+        }
+
+        // Step 3: Reveal metadata, timeline, skills, and links smoothly
+        revealRemainingSections();
+    }
+
+    runSequence();
+}
