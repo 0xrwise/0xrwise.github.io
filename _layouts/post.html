@@ -1,0 +1,32 @@
+---
+layout: default
+---
+{% assign term_user = site.terminal.username | default: "user" %}
+{% assign term_host = site.terminal.hostname | default: "0x4research" %}
+
+<article class="terminal-content-text post-article">
+    <div class="output-line output-cmd-header">
+        <span class="prompt"><span class="c-red">{{ term_user }}</span><span class="c-white">@{{ term_host }}:~/posts$</span></span>
+        <span class="c-white">cat {{ page.slug | default: "article" }}.md</span>
+    </div>
+
+    <header class="post-header">
+        <h1 class="post-title c-green"># {{ page.title }}</h1>
+        <p class="post-meta">
+            <span class="c-blue">DATE:</span> {{ page.date | date: "%Y-%m-%d" }}
+            {% if page.categories.size > 0 %}
+            | <span class="c-blue">CATEGORY:</span> {{ page.categories | join: ", " }}
+            {% endif %}
+        </p>
+    </header>
+
+    <div class="post-body">
+        {{ content }}
+    </div>
+
+    <div class="output-line cv-footer-prompt">
+        <span class="prompt"><span class="c-red">{{ term_user }}</span><span class="c-white">@{{ term_host }}:~/posts$</span></span>
+        <a href="{{ '/posts/' | relative_url }}" class="comm-link">cd .. (Back to Posts)</a>
+        <span class="blinking-cursor"></span>
+    </div>
+</article>
