@@ -1,27 +1,25 @@
 ---
 layout: default
 ---
+{% assign term_user = site.terminal.username | default: "user" %}
+{% assign term_host = site.terminal.hostname | default: "0x4research" %}
+
 <div class="ascii-art">
 <pre class="c-green">
-  ___                     _         
- / _ \__  __ _ ____      _(_)___ ___ 
-| | | \ \/ /| '__\ \ /\ / / / __/ _ \
-| |_| |>  < | |   \ V  V /| \__ \  __/
- \___//_/\_\|_|    \_/\_/ |_|___/\___|
+{{ site.terminal.ascii_banner | default: "0x4research" }}
 </pre>
 </div>
 
 <div class="intro-text">
-    <p class="c-white">Welcome to 0xrwise interactive shell.</p>
+    <p class="c-white">{{ site.terminal.intro_title | default: "Welcome to 0x4research interactive shell." }}</p>
     <p class="c-white">Type <span class="c-green">'help'</span> to see available commands.</p>
 </div>
 
-<div id="terminal-output"></div>
+<div id="terminal-output" aria-live="polite"></div>
 
 <div class="terminal-input-line">
     <span class="prompt">
-        <!-- Tanda ~ dan $ dikembalikan -->
-        <span class="c-red">0xrwise</span><span class="c-white">@research:~$</span>
+        <span class="c-red">{{ term_user }}</span><span class="c-white">@{{ term_host }}:~$</span>
     </span>
-    <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false">
+    <input type="text" id="cmd-input" autofocus autocomplete="off" spellcheck="false" aria-label="Terminal command input">
 </div>
