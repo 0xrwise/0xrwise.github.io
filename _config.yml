@@ -1,18 +1,108 @@
-# Pengaturan Dasar Website
-title: 0xrwise | Independent Researcher
-email: 0xrwise@atomicmail.io
+# ==============================================================================
+# 0x4research — Jekyll Terminal Research Archive & Personal Blog Theme
+# Configuration File (_config.yml)
+#
+# PANDUAN KONFIGURASI:
+# Ubah seluruh nilai placeholder di bawah ini sesuai dengan data Anda.
+# Seluruh halaman (Home, Posts, CV, dan Interactive Shell) otomatis membaca
+# isi file konfigurasi ini tanpa perlu mengedit file HTML atau JavaScript.
+# ==============================================================================
+
+# --- 1. SITE METADATA & SEO ---
+title: "0x4research | Personal Research Archive"
 description: >-
-  Archive for research. Life for research and spreading the truth.
-baseurl: "" 
-url: "https://0xrwise.my.id"
+  Minimalist terminal-based personal blog and research archive.
+url: "https://yourdomain.com"          # [UBAH] URL domain utama (tanpa trailing slash)
+baseurl: ""                            # [UBAH] Isi "/nama-repo" jika di-host di sub-path GitHub Pages
+email: "your_email@example.com"        # [UBAH] Alamat email kontak Anda
 
-# --- TAMBAHAN UNTUK META PREVIEW ---
-# Gambar default saat share link (pastikan gambar ada di folder assets/images/)
-image: "/assets/images/default-preview.jpg"
-# Username X/Twitter (opsional)
-twitter_username: 0xrwise 
+# Open Graph & Social Preview
+image: "/assets/images/og-preview.jpg" # [UBAH] Path gambar preview saat link dibagikan
+twitter_username: "your_handle"        # [UBAH] Username X/Twitter (tanpa @)
 
-# Pengaturan Build
+# --- 2. TERMINAL SHELL & PROMPT CONFIGURATION ---
+terminal:
+  window_title: "0x4research"          # [UBAH] Judul pada top-bar window terminal
+  username: "user"                     # [UBAH] Nama user pada prompt (contoh: user@0x4research:~$)
+  hostname: "0x4research"              # [UBAH] Nama host pada prompt
+  intro_title: "Welcome to 0x4research interactive shell."
+  # [UBAH] Banner ASCII Art pada halaman utama (Home)
+  ascii_banner: |
+      ___        _  _                                    _     
+     / _ \__  __| || |  _ __ ___  ___  ___  __ _ _ __ ___| |__  
+    | | | \ \/ /| || |_| '__/ _ \/ __|/ _ \/ _` | '__/ __| '_ \ 
+    | |_| |>  < |__   _| | |  __/\__ \  __/ (_| | | | (__| | | |
+     \___//_/\_\   |_| |_|  \___||___/\___|\__,_|_|  \___|_| |_|
+
+  # [UBAH] Output untuk perintah interaktif di halaman Home
+  commands:
+    whoami:
+      name: "[YOUR_FULL_NAME]"
+      alias: "[YOUR_USERNAME]"
+      bio: "Write a short description about yourself and your research focus here."
+      focus: "Research | Writing | Technology | Notes"
+    skills: "List your core competencies, tools, or research methodologies here."
+    contact:
+      label: "Contact"
+      text: "github.com/yourusername"
+      url: "https://github.com/yourusername"
+
+# --- 3. CV / PROFILE CONFIGURATION (/cv/) ---
+cv:
+  command: "cat ~/cv.txt"              # [UBAH] Perintah standar Unix yang diketik otomatis saat buka halaman CV
+  typewriter_speed: 18                 # [UBAH] Kecepatan efek mengetik (ms per karakter, makin kecil makin cepat)
+  photo: ""                            # [UBAH] Isi "/assets/images/profile.jpg" (rasio 3:4) atau kosongkan ""
+  photo_caption: "profile.jpg"         # [UBAH] Label kecil di bawah bingkai foto
+  full_name: "[YOUR FULL NAME]"        # [UBAH] Nama lengkap Anda
+  role: "[YOUR ROLE / TITLE]"          # [UBAH] Peran/profesi (contoh: Independent Researcher / Student)
+  location: "[CITY, COUNTRY]"          # [UBAH] Lokasi Anda
+
+  # [UBAH] Paragraf profil yang akan muncul dengan efek mengetik (typewriter) seperti rataalada.com
+  bio_lines:
+    - "Write your main profile summary or research statement here. This text types out character-by-character automatically when the CV page loads."
+    - "Use this second paragraph to highlight what topics you explore, what you are currently studying, or why you built this archive."
+
+  # [UBAH] Info ringkas di samping foto (format key : value)
+  metadata:
+    - key: "focus"
+      value: "[Research Topic A, Topic B, Topic C]"
+      color: "c-green"
+    - key: "affiliation"
+      value: "[University / Organization / Independent]"
+      color: ""
+    - key: "languages"
+      value: "[Indonesian, English]"
+      color: ""
+
+  # [UBAH] Riwayat Pendidikan / Pengalaman / Proyek Penelitian
+  timeline:
+    - period: "2024 - PRESENT"
+      title: "[Role / Research Project / Degree]"
+      org: "[Institution / Independent Archive]"
+      description: "Describe your activities, research papers, or key contributions during this period."
+    - period: "2021 - 2024"
+      title: "[Previous Role / Education]"
+      org: "[University / Organization]"
+      description: "Summarize your studies, thesis topic, or relevant background here."
+
+  # [UBAH] Daftar topik keahlian / bidang riset (ditampilkan sebagai tag terminal)
+  skills:
+    - "[Research Area 1]"
+    - "[Research Area 2]"
+    - "[Methodology / Tool 3]"
+    - "[Technical Skill 4]"
+    - "[Writing / Analysis 5]"
+
+  # [UBAH] Tautan kontak & profil eksternal di bagian bawah CV
+  links:
+    - label: "github"
+      text: "github.com/yourusername"
+      url: "https://github.com/yourusername"
+    - label: "email"
+      text: "your_email@example.com"
+      url: "mailto:your_email@example.com"
+
+# --- 4. BUILD SETTINGS ---
 markdown: kramdown
 permalink: /:categories/:year/:month/:day/:title/
 
@@ -20,7 +110,6 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - node_modules
-  - vendor/bundle/
-  - vendor/cache/
-  - vendor/gems/
-  - vendor/ruby/
+  - vendor/
+  - README.md
+  - LICENSE
