@@ -1,47 +1,64 @@
 ---
 ---
+// =============================================================================
+// 0x4research — Main Stylesheet (SCSS)
+// Structure:
+//   1. CSS Custom Properties (Theme Palette & Typography)
+//   2. Base Reset & Utility Classes
+//   3. Terminal Window Chrome & Navigation Tabs
+//   4. Interactive Shell & Shared Components
+//   5. Posts Directory & Article View (/posts/)
+//   6. Personal CV View with Typewriter & Side Photo (/cv/)
+//   7. Keyframe Animations & Media Queries
+// =============================================================================
+
+// --- 1. CSS CUSTOM PROPERTIES ---
 :root {
-    /* Palet Warna (GitHub Dark Style) */
-    --bg-body: #0d1117;       
-    --bg-terminal: #0d1117;   
-    --bg-header: #161b22;     
-    
-    --text-white: #c9d1d9;    
-    --text-green: #3fb950;    
-    --text-red: #ff7b72;      
-    --text-blue: #58a6ff;     
-    --text-muted: #8b949e;    
-    
-    /* Warna tombol Mac */
+    --bg-body: #0d1117;
+    --bg-terminal: #0d1117;
+    --bg-header: #161b22;
+
+    --text-white: #c9d1d9;
+    --text-green: #3fb950;
+    --text-red: #ff7b72;
+    --text-blue: #58a6ff;
+    --text-muted: #8b949e;
+
     --mac-red: #f85149;
     --mac-yellow: #d29922;
     --mac-green: #2ea043;
-    
+
     --font-mono: 'Fira Code', 'Consolas', 'Monaco', 'Courier New', Courier, monospace;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+// --- 2. BASE RESET & UTILITY CLASSES ---
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-body, html {
+body,
+html {
     background-color: var(--bg-body);
     color: var(--text-white);
     font-family: var(--font-mono);
-    font-size: clamp(14px, 2vw, 16px); 
+    font-size: clamp(14px, 2vw, 16px);
     height: 100vh;
     overflow: hidden;
     line-height: 1.6;
 }
 
-/* Utilities Class Warna */
 .c-white { color: var(--text-white); }
 .c-green { color: var(--text-green); font-weight: bold; }
-.c-red { color: var(--text-red); font-weight: bold; }
-.c-blue { color: var(--text-blue); font-weight: bold; }
+.c-red   { color: var(--text-red); font-weight: bold; }
+.c-blue  { color: var(--text-blue); font-weight: bold; }
+.c-muted { color: var(--text-muted); }
 
-/* Kontainer Utama Terminal */
+// --- 3. TERMINAL WINDOW CHROME & NAVIGATION TABS ---
 .terminal-container {
     width: 100%;
-    max-width: 1200px; /* Diperlebar agar cakep di desktop */
+    max-width: 1200px;
     margin: 0 auto;
     height: 100%;
     display: flex;
@@ -49,18 +66,15 @@ body, html {
     background-color: var(--bg-terminal);
     border-left: 1px solid var(--bg-header);
     border-right: 1px solid var(--bg-header);
-    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
-    
-    /* Eksekusi animasi terminal membuka (HP & Tablet) */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     animation: terminalOpen 0.8s ease-out forwards;
 }
 
-/* Eksekusi animasi memunculkan teks/header secara perlahan */
-.terminal-content, .terminal-header {
+.terminal-content,
+.terminal-header {
     animation: contentFadeIn 1s ease-in forwards;
 }
 
-/* --- HEADER GAYA MACOS & TAB --- */
 .terminal-header {
     background-color: var(--bg-header);
     border-bottom: 1px solid var(--text-muted);
@@ -71,31 +85,38 @@ body, html {
     align-items: center;
     padding: 12px 15px;
     position: relative;
+
+    .title {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--text-muted);
+        font-size: 13px;
+        font-weight: bold;
+    }
 }
 
 .mac-controls {
     display: flex;
     gap: 8px;
-    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .red { background-color: var(--mac-red); }
-    .yellow { background-color: var(--mac-yellow); }
-    .green { background-color: var(--mac-green); }
-}
 
-.top-bar .title {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: bold;
+    .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .red    { background-color: var(--mac-red); }
+    .yellow { background-color: var(--mac-yellow); }
+    .green  { background-color: var(--mac-green); }
 }
 
 .tabs {
     display: flex;
     overflow-x: auto;
-    scrollbar-width: none; 
-    
+    scrollbar-width: none;
+
     a {
         padding: 10px 20px;
         color: var(--text-muted);
@@ -105,104 +126,532 @@ body, html {
         border-bottom: 2px solid transparent;
         transition: all 0.2s ease;
         white-space: nowrap;
-        
+
         &:hover {
             color: var(--text-white);
             background-color: rgba(255, 255, 255, 0.05);
         }
-        
+
         &.active {
             color: var(--text-white);
             border-bottom: 2px solid var(--text-green);
-            background-color: var(--bg-terminal); 
+            background-color: var(--bg-terminal);
+        }
+
+        &.tab-search {
+            margin-left: auto;
+            border-right: none;
         }
     }
 }
 
-/* --- KONTEN TERMINAL --- */
+// --- 4. INTERACTIVE SHELL & SHARED COMPONENTS ---
 .terminal-content {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 30px 20px; 
+    padding: 30px 20px;
     scrollbar-width: thin;
     scrollbar-color: var(--text-muted) transparent;
-}
 
-/* Custom Scrollbar */
-.terminal-content::-webkit-scrollbar { width: 8px; }
-.terminal-content::-webkit-scrollbar-track { background: transparent; }
-.terminal-content::-webkit-scrollbar-thumb { background-color: var(--text-muted); border-radius: 4px; }
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: var(--text-muted);
+        border-radius: 4px;
+    }
+}
 
 .ascii-art {
     width: 100%;
     overflow-x: auto;
     margin-bottom: 25px;
-    pre { font-size: clamp(6px, 1.5vw, 14px); line-height: 1.15; font-weight: 700; color: var(--text-green); }
+
+    pre {
+        font-size: clamp(6px, 1.5vw, 14px);
+        line-height: 1.15;
+        font-weight: 700;
+        color: var(--text-green);
+    }
 }
 
-.intro-text { margin-bottom: 30px; }
+.intro-text {
+    margin-bottom: 30px;
+}
 
-/* Input Command */
 .terminal-input-line {
     display: flex;
     align-items: center;
     margin-top: 15px;
     width: 100%;
-    
-    .prompt { margin-right: 10px; white-space: nowrap; }
-    
+
+    .prompt {
+        margin-right: 10px;
+        white-space: nowrap;
+    }
+
     input {
-        flex-grow: 1; width: 100%; min-width: 0; background: transparent; border: none;
-        color: var(--text-white); font-family: var(--font-mono); font-size: inherit;
-        outline: none; caret-color: var(--text-white); 
+        flex-grow: 1;
+        width: 100%;
+        min-width: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-white);
+        font-family: var(--font-mono);
+        font-size: inherit;
+        outline: none;
+        caret-color: var(--text-white);
     }
 }
 
-.output-line { margin: 8px 0; word-break: break-word; }
+.output-line {
+    margin: 8px 0;
+    word-break: break-word;
+}
 
+.blinking-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background-color: var(--text-green);
+    animation: blink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 5px;
+}
 
-/* --- KEYFRAMES ANIMASI PEMBUKA TERMINAL --- */
+.comm-link {
+    color: var(--text-white);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--text-white);
+    transition: color 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+        color: var(--text-green);
+        border-bottom-color: var(--text-green);
+    }
+}
+
+// --- 5. POSTS DIRECTORY & ARTICLE VIEW (/posts/) ---
+.output-cmd-header {
+    margin-bottom: 20px;
+}
+
+.post-list {
+    line-height: 2;
+    font-size: 15px;
+}
+
+.post-item {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.post-link {
+    color: var(--text-white);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    padding: 2px 6px;
+    margin-left: -6px;
+    border-radius: 3px;
+
+    &:hover {
+        background-color: var(--text-green);
+        color: var(--bg-body);
+        font-weight: bold;
+    }
+}
+
+.output-cursor-line {
+    margin-top: 25px;
+}
+
+.post-article {
+    max-width: 850px;
+
+    .post-header {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #21262d;
+    }
+
+    .post-title {
+        font-size: 1.5rem;
+        margin-bottom: 6px;
+    }
+
+    .post-meta {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .post-body {
+        line-height: 1.8;
+
+        p, ul, ol, pre, blockquote {
+            margin-bottom: 16px;
+        }
+
+        h2, h3, h4 {
+            color: var(--text-green);
+            margin: 24px 0 12px;
+        }
+
+        code {
+            background-color: var(--bg-header);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: var(--bg-header);
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #21262d;
+
+            code {
+                background: none;
+                padding: 0;
+            }
+        }
+    }
+}
+
+// --- 6. PERSONAL CV VIEW WITH TYPEWRITER & SIDE PHOTO (/cv/) ---
+.cv-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.cv-cmd-line {
+    margin-bottom: 24px;
+}
+
+.cv-body.is-hidden {
+    display: none;
+}
+
+.cv-hero-split {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px dashed #30363d;
+}
+
+.cv-intro-col {
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.cv-identity-head {
+    margin-bottom: 18px;
+}
+
+.cv-name {
+    color: var(--text-white);
+    font-size: 1.65rem;
+    letter-spacing: 1px;
+    line-height: 1.25;
+    margin-bottom: 6px;
+}
+
+.cv-subhead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+
+    .cv-sep {
+        color: #30363d;
+    }
+}
+
+.cv-typewriter-box {
+    background-color: rgba(22, 27, 34, 0.65);
+    border-left: 3px solid var(--text-green);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    min-height: 92px;
+    border-radius: 0 4px 4px 0;
+}
+
+.cv-bio-paragraph {
+    color: var(--text-white);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 10px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.cv-kv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cv-kv-row {
+    display: flex;
+    align-items: baseline;
+    font-size: 0.92rem;
+    line-height: 1.5;
+
+    .cv-key {
+        min-width: 115px;
+        flex-shrink: 0;
+    }
+
+    .cv-colon {
+        color: var(--text-muted);
+        margin-right: 10px;
+    }
+
+    .cv-val {
+        color: var(--text-white);
+    }
+}
+
+.cv-photo-col {
+    flex-shrink: 0;
+    width: 190px;
+}
+
+.cv-photo-card {
+    border: 1px solid #30363d;
+    background-color: var(--bg-header);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.cv-photo-bar {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #30363d;
+    background-color: #0d1117;
+    text-align: center;
+}
+
+.cv-photo-frame {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background-color: #090d12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(25%) contrast(1.08);
+    }
+}
+
+.cv-photo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+
+    i {
+        font-size: 2.8rem;
+    }
+
+    span {
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+    }
+}
+
+.cv-section {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed #21262d;
+
+    &:last-of-type {
+        border-bottom: none;
+        padding-bottom: 8px;
+    }
+}
+
+.cv-section-title {
+    font-size: 1rem;
+    color: var(--text-white);
+    margin-bottom: 16px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.cv-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-left: 12px;
+    border-left: 1px solid #30363d;
+}
+
+.cv-timeline-item {
+    position: relative;
+    padding-left: 14px;
+
+    &::before {
+        content: "";
+        position: absolute;
+        left: -16px;
+        top: 8px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: var(--text-green);
+    }
+}
+
+.cv-time-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.cv-entry-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.cv-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cv-tag {
+    background-color: var(--bg-header);
+    border: 1px solid #30363d;
+    color: var(--text-white);
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+        border-color: var(--text-green);
+        color: var(--text-green);
+    }
+}
+
+.cv-links-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cv-footer-prompt {
+    margin-top: 24px;
+}
+
+.cv-fade-section {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+
+    &.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// --- 7. KEYFRAME ANIMATIONS & MEDIA QUERIES ---
 @keyframes terminalOpen {
-    0% { height: 2px; opacity: 0; transform: scaleY(0); transform-origin: top; }
-    50% { height: 10px; opacity: 1; transform: scaleY(0.1); }
+    0%   { height: 2px; opacity: 0; transform: scaleY(0); transform-origin: top; }
+    50%  { height: 10px; opacity: 1; transform: scaleY(0.1); }
     100% { height: 100%; opacity: 1; transform: scaleY(1); }
 }
 
 @keyframes contentFadeIn {
-    0% { opacity: 0; }
-    70% { opacity: 0; } /* Delay agar terminal selesai melar dulu */
-    100% { opacity: 1; }
+    0%, 70% { opacity: 0; }
+    100%    { opacity: 1; }
 }
 
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0; }
+}
 
-/* --- MEDIA QUERIES (RESPONSIVITAS) --- */
+@media screen and (max-width: 680px) {
+    .cv-hero-split {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 20px;
+    }
 
-/* Tablet */
+    .cv-photo-col {
+        width: 150px;
+    }
+
+    .cv-identity-head {
+        text-align: center;
+    }
+
+    .cv-subhead {
+        justify-content: center;
+    }
+}
+
 @media screen and (min-width: 768px) {
-    .terminal-content { padding: 40px 30px; }
-    .tabs a { padding: 12px 25px; font-size: 15px; }
+    .terminal-content {
+        padding: 40px 30px;
+    }
+
+    .tabs a {
+        padding: 12px 25px;
+        font-size: 15px;
+    }
 }
 
-/* Desktop */
 @media screen and (min-width: 1024px) {
     .terminal-container {
-        margin: 20px auto; 
-        height: calc(100vh - 40px); /* Melayang di layar */
+        margin: 20px auto;
+        height: calc(100vh - 40px);
         border-radius: 8px;
         border: 1px solid var(--text-muted);
-        /* Eksekusi animasi khusus tinggi desktop */
         animation: terminalOpenDesktop 0.8s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
     }
-    
-    .terminal-header { border-top-left-radius: 8px; border-top-right-radius: 8px; }
-    .terminal-content { padding: 50px 40px; font-size: 16px; }
-    .ascii-art pre { font-size: 14px; }
-    
-    /* Keyframe khusus tinggi desktop (menyesuaikan calc) */
+
+    .terminal-header {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .terminal-content {
+        padding: 50px 40px;
+        font-size: 16px;
+    }
+
+    .ascii-art pre {
+        font-size: 14px;
+    }
+
     @keyframes terminalOpenDesktop {
-        0% { height: 2px; opacity: 0; transform: scaleY(0); transform-origin: top; }
-        50% { height: 10px; opacity: 1; transform: scaleY(0.1); }
+        0%   { height: 2px; opacity: 0; transform: scaleY(0); transform-origin: top; }
+        50%  { height: 10px; opacity: 1; transform: scaleY(0.1); }
         100% { height: calc(100vh - 40px); opacity: 1; transform: scaleY(1); }
     }
 }
