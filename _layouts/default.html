@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Dinamis Title & Deskripsi -->
-    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
-    <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
 
-    <!-- === OPEN GRAPH META TAGS (Untuk WA, FB, Telegram, dll) === -->
+    {% assign page_title = page.title | default: site.title %}
+    {% assign page_desc = page.excerpt | default: site.description | strip_html | strip_newlines | truncate: 160 %}
     {% assign og_image = page.image | default: site.image %}
+
+    <title>{% if page.title %}{{ page.title }} | {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+    <meta name="description" content="{{ page_desc }}">
+
+    <!-- Open Graph -->
     <meta property="og:site_name" content="{{ site.title }}">
-    <meta property="og:type" content="{% if page.url contains '/posts/' %}article{% else %}website{% endif %}">
-    <meta property="og:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
-    <meta property="og:description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
-    <meta property="og:url" content="{{ site.url }}{{ page.url }}">
-    <!-- Fix URL Absolut untuk Gambar -->
-    <meta property="og:image" content="{{ site.url | append: og_image }}">
-    
-    <!-- === TWITTER CARDS (Untuk preview di X/Twitter) === -->
+    <meta property="og:type" content="{% if page.layout == 'post' %}article{% else %}website{% endif %}">
+    <meta property="og:title" content="{{ page_title }}">
+    <meta property="og:description" content="{{ page_desc }}">
+    <meta property="og:url" content="{{ page.url | absolute_url }}">
+    <meta property="og:image" content="{{ og_image | absolute_url }}">
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    {% if site.twitter_username and site.twitter_username != "" %}
     <meta name="twitter:site" content="@{{ site.twitter_username }}">
     <meta name="twitter:creator" content="@{{ site.twitter_username }}">
-    <meta name="twitter:title" content="{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}">
-    <meta name="twitter:description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
-    <!-- Fix URL Absolut untuk Gambar Twitter -->
-    <meta name="twitter:image" content="{{ site.url | append: og_image }}">
+    {% endif %}
+    <meta name="twitter:title" content="{{ page_title }}">
+    <meta name="twitter:description" content="{{ page_desc }}">
+    <meta name="twitter:image" content="{{ og_image | absolute_url }}">
 
-    <!-- FontAwesome & Custom CSS -->
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 </head>
@@ -35,22 +37,27 @@
     <div class="terminal-container">
         <header class="terminal-header">
             <div class="top-bar">
-                <div class="mac-controls">
+                <div class="mac-controls" aria-hidden="true">
                     <span class="dot red"></span>
                     <span class="dot yellow"></span>
                     <span class="dot green"></span>
                 </div>
-                <div class="title">0xrwise</div>
+                <div class="title">{{ site.terminal.window_title | default: "0x4research" }}</div>
             </div>
-            
-            <nav class="tabs">
-                <a href="/" class="active"><i class="fa-solid fa-terminal"></i> HOME</a>
-                <a href="/posts"><i class="fa-solid fa-folder-open"></i> POST</a>
-                <a href="/cv"><i class="fa-solid fa-user-tie"></i> CV</a>
-                
-                <!-- Logika Liquid Jekyll: Tombol Search HANYA muncul di halaman POSTS -->
+
+            <nav class="tabs" aria-label="Primary Navigation">
+                <a href="{{ '/' | relative_url }}" class="{% if page.url == '/' %}active{% endif %}">
+                    <i class="fa-solid fa-terminal"></i> HOME
+                </a>
+                <a href="{{ '/posts/' | relative_url }}" class="{% if page.url contains '/posts' or page.layout == 'post' %}active{% endif %}">
+                    <i class="fa-solid fa-folder-open"></i> POST
+                </a>
+                <a href="{{ '/cv/' | relative_url }}" class="{% if page.url contains '/cv' %}active{% endif %}">
+                    <i class="fa-solid fa-user-tie"></i> CV
+                </a>
+
                 {% if page.url == '/posts/' %}
-                <a href="#" style="margin-left: auto; border-right: none;" title="Search">
+                <a href="#search" class="tab-search" title="Search">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </a>
                 {% endif %}
@@ -62,6 +69,27 @@
         </main>
     </div>
 
+    <!-- Inject site configuration into terminal runtime -->
+    <script id="terminal-config" type="application/json">
+    {
+        "username": {{ site.terminal.username | default: "user" | jsonify }},
+        "hostname": {{ site.terminal.hostname | default: "0x4research" | jsonify }},
+        "commands": {
+            "whoami": {
+                "name": {{ site.terminal.commands.whoami.name | default: "[YOUR_FULL_NAME]" | jsonify }},
+                "alias": {{ site.terminal.commands.whoami.alias | default: "[YOUR_USERNAME]" | jsonify }},
+                "bio": {{ site.terminal.commands.whoami.bio | default: "" | jsonify }},
+                "focus": {{ site.terminal.commands.whoami.focus | default: "" | jsonify }}
+            },
+            "skills": {{ site.terminal.commands.skills | default: "" | jsonify }},
+            "contact": {
+                "label": {{ site.terminal.commands.contact.label | default: "Contact" | jsonify }},
+                "text": {{ site.terminal.commands.contact.text | default: "" | jsonify }},
+                "url": {{ site.terminal.commands.contact.url | default: "#" | jsonify }}
+            }
+        }
+    }
+    </script>
     <script src="{{ '/assets/js/terminal.js' | relative_url }}"></script>
 </body>
 </html>
